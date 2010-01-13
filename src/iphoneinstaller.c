@@ -297,7 +297,6 @@ static void parse_opts(int argc, char **argv)
 			break;
 		case 'D':
 			iphone_set_debug_level(1);
-			iphone_set_debug_mask(DBGMASK_ALL);
 			break;
 		default:
 			print_usage(argc, argv);
@@ -318,7 +317,7 @@ int main(int argc, char **argv)
 	instproxy_client_t ipc = NULL;
 	np_client_t np = NULL;
 	afc_client_t afc = NULL;
-	int port = 0;
+	uint16_t port = 0;
 	int res = 0;
 
 	parse_opts(argc, argv);
@@ -331,7 +330,7 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new(phone, &client)) {
+	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(phone, &client, "iphoneinstaller")) {
 		fprintf(stderr, "Could not connect to lockdownd. Exiting.\n");
 		goto leave_cleanup;
 	}
@@ -923,7 +922,7 @@ run_again:
 				remove_archive_mode = 1;
 				free(options);
 				options = NULL;
-				if (LOCKDOWN_E_SUCCESS != lockdownd_client_new(phone, &client)) {
+				if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(phone, &client, "iphoneinstaller")) {
 					fprintf(stderr, "Could not connect to lockdownd. Exiting.\n");
 					goto leave_cleanup;
 				}
