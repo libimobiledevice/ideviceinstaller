@@ -379,7 +379,8 @@ run_again:
 
 	if (list_apps_mode) {
 		int xml_mode = 0;
-		instproxy_apptype_t apptype = INSTPROXY_APPTYPE_USER;
+		plist_t client_opts = instproxy_client_options_new();
+		instproxy_client_options_add(client_opts, "ApplicationType", "User", NULL);
 		instproxy_error_t err;
 		plist_t apps = NULL;
 
@@ -389,11 +390,15 @@ run_again:
 			char *elem = strtok(opts, ",");
 			while (elem) {
 				if (!strcmp(elem, "list_system")) {
-					apptype = INSTPROXY_APPTYPE_SYSTEM;
+					if (!client_opts) {
+						client_opts = instproxy_client_options_new();
+					}
+					instproxy_client_options_add(client_opts, "ApplicationType", "System", NULL);
 				} else if (!strcmp(elem, "list_all")) {
-					apptype = INSTPROXY_APPTYPE_ALL;
+					instproxy_client_options_free(client_opts);
+					client_opts = NULL;
 				} else if (!strcmp(elem, "list_user")) {
-					apptype = INSTPROXY_APPTYPE_USER;
+					/* do nothing, we're already set */
 				} else if (!strcmp(elem, "xml")) {
 					xml_mode = 1;
 				}
@@ -401,7 +406,8 @@ run_again:
 			}
 		}
 
-		err = instproxy_browse(ipc, apptype, &apps);
+		err = instproxy_browse(ipc, client_opts, &apps);
+		instproxy_client_options_free(client_opts);
 		if (err != INSTPROXY_E_SUCCESS) {
 			fprintf(stderr, "ERROR: instproxy_browse returned %d\n", err);
 			goto leave_cleanup;
@@ -641,18 +647,26 @@ run_again:
 		printf("done.\n");
 
 		/* perform installation or upgrade */
+		plist_t client_opts = instproxy_client_options_new();
+		if (sinf) {
+			instproxy_client_options_add(client_opts, "ApplicationSINF", sinf, NULL);
+		}
+		if (meta) {
+			instproxy_client_options_add(client_opts, "iTunesMetadata", meta, NULL);
+		}
 		if (install_mode) {
 			printf("Installing '%s'\n", pkgname);
-			instproxy_install(ipc, pkgname, sinf, meta, status_cb);
+			instproxy_install(ipc, pkgname, client_opts, status_cb);
 		} else {
 			printf("Upgrading '%s'\n", pkgname);
-			instproxy_upgrade(ipc, pkgname, sinf, meta, status_cb);
+			instproxy_upgrade(ipc, pkgname, client_opts, status_cb);
 		}
+		instproxy_client_options_free(client_opts);
 		free(pkgname);
 		wait_for_op_complete = 1;
 		notification_expected = 1;
 	} else if (uninstall_mode) {
-		instproxy_uninstall(ipc, appid, status_cb);
+		instproxy_uninstall(ipc, appid, NULL, status_cb);
 		wait_for_op_complete = 1;
 		notification_expected = 1;
 	} else if (list_archives_mode) {
@@ -673,7 +687,7 @@ run_again:
 			}
 		}
 
-		err = instproxy_lookup_archives(ipc, &dict);
+		err = instproxy_lookup_archives(ipc, NULL, &dict);
 		if (err != INSTPROXY_E_SUCCESS) {
 			fprintf(stderr, "ERROR: lookup_archives returned %d\n", err);
 			goto leave_cleanup;
@@ -747,24 +761,37 @@ run_again:
 		while (node);
 		plist_free(dict);
 	} else if (archive_mode) {
-		uint32_t opt = INSTPROXY_ARCHIVE_SKIP_UNINSTALL;
 		char *copy_path = NULL;
 		int remove_after_copy = 0;
+		int skip_uninstall = 1;
+		int app_only = 0;
+		plist_t client_opts = NULL;
+
 		/* look for options */
 		if (options) {
 			char *opts = strdup(options);
 			char *elem = strtok(opts, ",");
 			while (elem) {
 				if (!strcmp(elem, "uninstall")) {
-					opt &= ~INSTPROXY_ARCHIVE_SKIP_UNINSTALL;
+					skip_uninstall = 0;
 				} else if (!strcmp(elem, "app_only")) {
-					opt |= INSTPROXY_ARCHIVE_APP_ONLY;
+					app_only = 1;
 				} else if ((strlen(elem) > 5) && !strncmp(elem, "copy=", 5)) {
 					copy_path = strdup(elem+5);
 				} else if (!strcmp(elem, "remove")) {
 					remove_after_copy = 1;
 				}
 				elem = strtok(NULL, ",");
+			}
+		}
+
+		if (skip_uninstall || app_only) {
+			client_opts = instproxy_client_options_new();
+			if (skip_uninstall) {
+				instproxy_client_options_add(client_opts, "SkipUninstall", 1, NULL);
+			}
+			if (app_only) {
+				instproxy_client_options_add(client_opts, "ArchiveType", "ApplicationOnly", NULL);
 			}
 		}
 
@@ -798,9 +825,10 @@ run_again:
 			}
 		}
 
-		instproxy_archive(ipc, appid, opt, status_cb);
+		instproxy_archive(ipc, appid, client_opts, status_cb);
+		instproxy_client_options_free(client_opts);
 		wait_for_op_complete = 1;
-		if (opt & INSTPROXY_ARCHIVE_SKIP_UNINSTALL) {
+		if (skip_uninstall) {
 			notification_expected = 0;
 		} else {
 			notification_expected = 1;
@@ -931,11 +959,11 @@ run_again:
 		}
 		goto leave_cleanup;
 	} else if (restore_mode) {
-		instproxy_restore(ipc, appid, status_cb);
+		instproxy_restore(ipc, appid, NULL, status_cb);
 		wait_for_op_complete = 1;
 		notification_expected = 1;
 	} else if (remove_archive_mode) {
-		instproxy_remove_archive(ipc, appid, status_cb);
+		instproxy_remove_archive(ipc, appid, NULL, status_cb);
 		wait_for_op_complete = 1;
 	} else {
 		printf
