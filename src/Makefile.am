@@ -1,17 +1,17 @@
 AM_CFLAGS =			\
 	$(GLOBAL_CFLAGS)	\
-	$(libiphone_CFLAGS)	\
+	$(libimobiledevice_CFLAGS)	\
 	$(libplist_CFLAGS)	\
 	$(libzip_CFLAGS)
 
 AM_LDFLAGS =			\
-	$(libiphone_LIBS)	\
+	$(libimobiledevice_LIBS)	\
 	$(libplist_LIBS)	\
 	$(libzip_LIBS)
 
-bin_PROGRAMS = iphoneinstaller
+bin_PROGRAMS = ideviceinstaller
 
-iphoneinstaller_SOURCES = iphoneinstaller.c
-iphoneinstaller_CFLAGS = $(AM_CFLAGS)
-iphoneinstaller_LDFLAGS = $(AM_LDFLAGS)
+ideviceinstaller_SOURCES = ideviceinstaller.c
+ideviceinstaller_CFLAGS = $(AM_CFLAGS)
+ideviceinstaller_LDFLAGS = $(AM_LDFLAGS)
 

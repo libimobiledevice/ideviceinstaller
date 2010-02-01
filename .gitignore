@@ -30,5 +30,4 @@ libtool
 *Makefile
 stamp-h1
 src/.libs
-src/sbmanager
-data/data.h
+src/ideviceinstaller

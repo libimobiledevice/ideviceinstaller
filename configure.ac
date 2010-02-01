@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(iphoneinstaller, 1.0.0, nospam@nowhere.com)
+AC_INIT(ideviceinstaller, 1.0.0, nospam@nowhere.com)
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 AC_CONFIG_SRCDIR([src/])
@@ -15,7 +15,7 @@ AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 
 # Checks for libraries.
-PKG_CHECK_MODULES(libiphone, libiphone-1.0)
+PKG_CHECK_MODULES(libimobiledevice, libimobiledevice-1.0 >= 0.9.7)
 PKG_CHECK_MODULES(libplist, libplist >= 0.15)
 PKG_CHECK_MODULES(libzip, libzip >= 0.8)
 

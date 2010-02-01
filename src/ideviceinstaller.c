@@ -1,5 +1,5 @@
 /**
- * iphoneinstaller -- Manage iPhone/iPod apps
+ * ideviceinstaller -- Manage iPhone/iPod apps
  *
  * Copyright (C) 2010 Nikias Bassen <nikias@gmx.li>
  *
@@ -29,11 +29,11 @@
 #include <errno.h>
 #include <time.h>
 
-#include <libiphone/libiphone.h>
-#include <libiphone/lockdown.h>
-#include <libiphone/installation_proxy.h>
-#include <libiphone/notification_proxy.h>
-#include <libiphone/afc.h>
+#include <libimobiledevice/libimobiledevice.h>
+#include <libimobiledevice/lockdown.h>
+#include <libimobiledevice/installation_proxy.h>
+#include <libimobiledevice/notification_proxy.h>
+#include <libimobiledevice/afc.h>
 
 #include <plist/plist.h>
 
@@ -296,7 +296,7 @@ static void parse_opts(int argc, char **argv)
 			}
 			break;
 		case 'D':
-			iphone_set_debug_level(1);
+			idevice_set_debug_level(1);
 			break;
 		default:
 			print_usage(argc, argv);
@@ -312,7 +312,7 @@ static void parse_opts(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-	iphone_device_t phone = NULL;
+	idevice_t phone = NULL;
 	lockdownd_client_t client = NULL;
 	instproxy_client_t ipc = NULL;
 	np_client_t np = NULL;
@@ -325,12 +325,12 @@ int main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (IPHONE_E_SUCCESS != iphone_device_new(&phone, uuid)) {
+	if (IDEVICE_E_SUCCESS != idevice_new(&phone, uuid)) {
 		fprintf(stderr, "No iPhone found, is it plugged in?\n");
 		return -1;
 	}
 
-	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(phone, &client, "iphoneinstaller")) {
+	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(phone, &client, "ideviceinstaller")) {
 		fprintf(stderr, "Could not connect to lockdownd. Exiting.\n");
 		goto leave_cleanup;
 	}
@@ -950,7 +950,7 @@ run_again:
 				remove_archive_mode = 1;
 				free(options);
 				options = NULL;
-				if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(phone, &client, "iphoneinstaller")) {
+				if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(phone, &client, "ideviceinstaller")) {
 					fprintf(stderr, "Could not connect to lockdownd. Exiting.\n");
 					goto leave_cleanup;
 				}
@@ -993,7 +993,7 @@ run_again:
 	if (client) {
 		lockdownd_client_free(client);
 	}
-	iphone_device_free(phone);
+	idevice_free(phone);
 
 	if (uuid) {
 		free(uuid);
