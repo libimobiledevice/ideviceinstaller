@@ -63,7 +63,7 @@ int err_occured = 0;
 int notified = 0;
 
 
-static void notifier(const char *notification)
+static void notifier(const char *notification, void *unused)
 {
 	/* printf("notification received: %s\n", notification);*/
 	notified = 1;
@@ -348,7 +348,7 @@ int main(int argc, char **argv)
 		goto leave_cleanup;
 	}
 
-	np_set_notify_callback(np, notifier);
+	np_set_notify_callback(np, notifier, NULL);
 
 	const char *noties[3] = { NP_APP_INSTALLED, NP_APP_UNINSTALLED, NULL };
 
