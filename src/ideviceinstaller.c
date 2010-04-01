@@ -520,13 +520,12 @@ run_again:
 		/* extract iTunesMetadata.plist from package */
 		char *zbuf = NULL;
 		uint32_t len = 0;
-		if (zip_f_get_contents(zf, "iTunesMetadata.plist", 0, &zbuf, &len) < 0) {
-			zip_unchange_all(zf);
-			zip_close(zf);
-			goto leave_cleanup;
+		if (zip_f_get_contents(zf, "iTunesMetadata.plist", 0, &zbuf, &len) == 0) {
+			meta = plist_new_data(zbuf, len);
 		}
-		meta = plist_new_data(zbuf, len);
-		free(zbuf);
+		if (zbuf) {
+			free(zbuf);
+		}
 
 		/* we need to get the CFBundleName first */
 		plist_t info = NULL;
