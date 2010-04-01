@@ -20,6 +20,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 
  * USA
  */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdlib.h>
 #define _GNU_SOURCE 1
 #define __USE_GNU 1
@@ -62,8 +65,11 @@ int op_completed = 0;
 int err_occured = 0;
 int notified = 0;
 
-
+#ifdef HAVE_LIBIMOBILEDEVICE_1_0
 static void notifier(const char *notification, void *unused)
+#else
+static void notifier(const char *notification)
+#endif
 {
 	/* printf("notification received: %s\n", notification);*/
 	notified = 1;
@@ -348,7 +354,11 @@ int main(int argc, char **argv)
 		goto leave_cleanup;
 	}
 
+#ifdef HAVE_LIBIMOBILEDEVICE_1_0
 	np_set_notify_callback(np, notifier, NULL);
+#else
+	np_set_notify_callback(np, notifier);
+#endif
 
 	const char *noties[3] = { NP_APP_INSTALLED, NP_APP_UNINSTALLED, NULL };
 
