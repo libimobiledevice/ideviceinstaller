@@ -75,7 +75,11 @@ static void notifier(const char *notification)
 	notified = 1;
 }
 
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
+static void status_cb(const char *operation, plist_t status, void *unused)
+#else
 static void status_cb(const char *operation, plist_t status)
+#endif
 {
 	if (status && operation) {
 		plist_t npercent = plist_dict_get_item(status, "PercentComplete");
@@ -665,17 +669,29 @@ run_again:
 		}
 		if (install_mode) {
 			printf("Installing '%s'\n", pkgname);
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
+			instproxy_install(ipc, pkgname, client_opts, status_cb, NULL);
+#else
 			instproxy_install(ipc, pkgname, client_opts, status_cb);
+#endif
 		} else {
 			printf("Upgrading '%s'\n", pkgname);
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
+			instproxy_upgrade(ipc, pkgname, client_opts, status_cb, NULL);
+#else
 			instproxy_upgrade(ipc, pkgname, client_opts, status_cb);
+#endif
 		}
 		instproxy_client_options_free(client_opts);
 		free(pkgname);
 		wait_for_op_complete = 1;
 		notification_expected = 1;
 	} else if (uninstall_mode) {
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
+		instproxy_uninstall(ipc, appid, NULL, status_cb, NULL);
+#else
 		instproxy_uninstall(ipc, appid, NULL, status_cb);
+#endif
 		wait_for_op_complete = 1;
 		notification_expected = 1;
 	} else if (list_archives_mode) {
@@ -834,7 +850,11 @@ run_again:
 			}
 		}
 
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
+		instproxy_archive(ipc, appid, client_opts, status_cb, NULL);
+#else
 		instproxy_archive(ipc, appid, client_opts, status_cb);
+#endif
 		instproxy_client_options_free(client_opts);
 		wait_for_op_complete = 1;
 		if (skip_uninstall) {
@@ -968,11 +988,19 @@ run_again:
 		}
 		goto leave_cleanup;
 	} else if (restore_mode) {
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
+		instproxy_restore(ipc, appid, NULL, status_cb, NULL);
+#else
 		instproxy_restore(ipc, appid, NULL, status_cb);
+#endif
 		wait_for_op_complete = 1;
 		notification_expected = 1;
 	} else if (remove_archive_mode) {
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
+		instproxy_remove_archive(ipc, appid, NULL, status_cb, NULL);
+#else
 		instproxy_remove_archive(ipc, appid, NULL, status_cb);
+#endif
 		wait_for_op_complete = 1;
 	} else {
 		printf
