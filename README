@@ -1,15 +1,15 @@
-iphoneinstaller
+ideviceinstaller
 ----------
 
-iphoneinstaller is a tool to interact with the installation_proxy 
+ideviceinstaller is a tool to interact with the installation_proxy 
 of an iPhone/iPod Touch device allowing to install, upgrade, uninstall,
 archive, restore, and enumerate installed or archived apps.
 
-It makes use of the libiphone library that allows communication
+It makes use of the libimobiledevice library that allows communication
 with the devices.
 
 For more information:
-	http://matt.colyer.name/projects/iphone-linux/
+	http://www.libimobiledevice.org/
 
 README updated on:
-	2010-01-04
+	2010-04-02
