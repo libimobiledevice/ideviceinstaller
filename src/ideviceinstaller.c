@@ -228,16 +228,16 @@ static void parse_opts(int argc, char **argv)
 {
 	static struct option longopts[] = {
 		{"help", 0, NULL, 'h'},
-		{"uuid", 0, NULL, 'U'},
+		{"uuid", 1, NULL, 'U'},
 		{"list-apps", 0, NULL, 'l'},
-		{"install", 0, NULL, 'i'},
-		{"uninstall", 0, NULL, 'u'},
-		{"upgrade", 0, NULL, 'g'},
+		{"install", 1, NULL, 'i'},
+		{"uninstall", 1, NULL, 'u'},
+		{"upgrade", 1, NULL, 'g'},
 		{"list-archives", 0, NULL, 'L'},
-		{"archive", 0, NULL, 'a'},
-		{"restore", 0, NULL, 'r'},
-		{"remove-archive", 0, NULL, 'R'},
-		{"options", 0, NULL, 'o'},
+		{"archive", 1, NULL, 'a'},
+		{"restore", 1, NULL, 'r'},
+		{"remove-archive", 1, NULL, 'R'},
+		{"options", 1, NULL, 'o'},
 		{"debug", 0, NULL, 'D'},
 		{NULL, 0, NULL, 0}
 	};
