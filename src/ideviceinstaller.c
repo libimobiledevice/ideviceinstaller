@@ -643,7 +643,7 @@ run_again:
 					total += written;
 				}
 				if (total != amount) {
-					fprintf(stderr, "Error: wrote only %d of %d\n", total,
+					fprintf(stderr, "Error: wrote only %d of %zu\n", total,
 							amount);
 					afc_file_close(afc, af);
 					fclose(f);
