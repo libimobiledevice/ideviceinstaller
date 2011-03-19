@@ -1,0 +1,8 @@
+Version 1.0.0
+~~~~~~~~~~~~~
+
+* First official public tarbal release
+* Features:
+  - Install, upgrade, uninstall, archive, restore, and enumerate installed
+    or archived apps on an iDevice
+
