@@ -200,28 +200,29 @@ static void print_usage(int argc, char **argv)
 
 	name = strrchr(argv[0], '/');
 	printf("Usage: %s OPTIONS\n", (name ? name + 1 : argv[0]));
+	printf("Manage apps on an iDevice.\n\n");
 	printf
-		("  -U|--uuid UUID\tTarget specific device by its 40-digit device UUID.\n"
-		 "  -l|--list-apps\tList apps, possible options:\n"
+		("  -U, --uuid UUID\tTarget specific device by its 40-digit device UUID.\n"
+		 "  -l, --list-apps\tList apps, possible options:\n"
 		 "       -o list_user\t- list user apps only (this is the default)\n"
 		 "       -o list_system\t- list system apps only\n"
 		 "       -o list_all\t- list all types of apps\n"
 		 "       -o xml\t\t- print full output as xml plist\n"
-		 "  -i|--install ARCHIVE\tInstall app from package file specified by ARCHIVE.\n"
-		 "  -u|--uninstall APPID\tUninstall app specified by APPID.\n"
-		 "  -g|--upgrade APPID\tUpgrade app specified by APPID.\n"
-		 "  -L|--list-archives\tList archived applications, possible options:\n"
+		 "  -i, --install ARCHIVE\tInstall app from package file specified by ARCHIVE.\n"
+		 "  -u, --uninstall APPID\tUninstall app specified by APPID.\n"
+		 "  -g, --upgrade APPID\tUpgrade app specified by APPID.\n"
+		 "  -L, --list-archives\tList archived applications, possible options:\n"
 		 "       -o xml\t\t- print full output as xml plist\n"
-		 "  -a|--archive APPID\tArchive app specified by APPID, possible options:\n"
+		 "  -a, --archive APPID\tArchive app specified by APPID, possible options:\n"
 		 "       -o uninstall\t- uninstall the package after making an archive\n"
 		 "       -o app_only\t- archive application data only\n"
 		 "       -o copy=PATH\t- copy the app archive to directory PATH when done\n"
 		 "       -o remove\t- only valid when copy=PATH is used: remove after copy\n"
-		 "  -r|--restore APPID\tRestore archived app specified by APPID\n"
-		 "  -R|--remove-archive APPID  Remove app archive specified by APPID\n"
-		 "  -o|--options\t\tPass additional options to the specified command.\n"
-		 "  -h|--help\t\tprints usage information\n"
-		 "  -D|--debug\t\tenable communication debugging\n" "\n");
+		 "  -r, --restore APPID\tRestore archived app specified by APPID\n"
+		 "  -R, --remove-archive APPID  Remove app archive specified by APPID\n"
+		 "  -o, --options\t\tPass additional options to the specified command.\n"
+		 "  -h, --help\t\tprints usage information\n"
+		 "  -d, --debug\t\tenable communication debugging\n" "\n");
 }
 
 static void parse_opts(int argc, char **argv)
@@ -238,13 +239,13 @@ static void parse_opts(int argc, char **argv)
 		{"restore", 1, NULL, 'r'},
 		{"remove-archive", 1, NULL, 'R'},
 		{"options", 1, NULL, 'o'},
-		{"debug", 0, NULL, 'D'},
+		{"debug", 0, NULL, 'd'},
 		{NULL, 0, NULL, 0}
 	};
 	int c;
 
 	while (1) {
-		c = getopt_long(argc, argv, "hU:li:u:g:La:r:R:o:D", longopts,
+		c = getopt_long(argc, argv, "hU:li:u:g:La:r:R:o:d", longopts,
 						(int *) 0);
 		if (c == -1) {
 			break;
@@ -305,7 +306,7 @@ static void parse_opts(int argc, char **argv)
 				options = newopts;
 			}
 			break;
-		case 'D':
+		case 'd':
 			idevice_set_debug_level(1);
 			break;
 		default:
