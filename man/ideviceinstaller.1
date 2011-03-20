@@ -31,17 +31,17 @@ list apps installed on the device.
 .RS
 .B Additional options:
 .TP
--o list_user
+\-o list_user
 list user apps only (apps installed by the user)
 .B This is the default.
 .TP
--o list_system
+\-o list_system
 list system apps only (apps available from the system firmware)
 .TP
--o list_all
+\-o list_all
 list all types of apps
 .TP
--o xml
+\-o xml
 print output in xml format (PList)
 .RE
 
@@ -68,7 +68,7 @@ list archived applications on the device.
 .RS
 .B Additional options:
 .TP
--o xml
+\-o xml
 print output in xml format (PList)
 .RE
 
@@ -79,16 +79,16 @@ archive app specified by APPID.
 .RS
 .B Additional options:
 .TP
--o uninstall
+\-o uninstall
 uninstall the package after making an archive
 .TP
--o app_only
+\-o app_only
 archive application data only
 .TP
--o copy=PATH
+\-o copy=PATH
 copy the app archive to directory PATH when done
 .TP
--o remove
+\-o remove
 only valid when copy=PATH is used: remove after copy
 .RE
 
