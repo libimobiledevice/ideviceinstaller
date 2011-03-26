@@ -31,6 +31,7 @@
 #include <getopt.h>
 #include <errno.h>
 #include <time.h>
+#include <libgen.h>
 
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
