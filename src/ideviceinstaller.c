@@ -163,7 +163,7 @@ static int zip_f_get_contents(struct zip *zf, const char *filename, int locate_f
 
 	*buffer = malloc(zs.size);
 	if (zip_fread(zfile, *buffer, zs.size) != zs.size) {
-		fprintf(stderr, "ERROR: zip_fread %ld bytes from '%s'\n", zs.size, filename);
+		fprintf(stderr, "ERROR: zip_fread %lld bytes from '%s'\n", (uint64_t)zs.size, filename);
 		free(*buffer);
 		*buffer = NULL;
 		zip_fclose(zfile);
