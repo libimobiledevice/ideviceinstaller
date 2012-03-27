@@ -33,6 +33,7 @@
 #include <time.h>
 #include <libgen.h>
 #include <inttypes.h>
+#include <limits.h>
 
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
