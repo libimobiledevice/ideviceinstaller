@@ -1,3 +1,11 @@
+Version 1.0.1
+~~~~~~~~~~~~~
+
+* Changes:
+  - Fix minor manpage typos
+  - Fix build on OS X
+  - Fix build warnings and make compilers happy
+
 Version 1.0.0
 ~~~~~~~~~~~~~
 
