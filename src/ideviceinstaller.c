@@ -212,6 +212,7 @@ static void print_usage(int argc, char **argv)
 		 "       -o list_all\t- list all types of apps\n"
 		 "       -o xml\t\t- print full output as xml plist\n"
 		 "  -i, --install ARCHIVE\tInstall app from package file specified by ARCHIVE.\n"
+		 "                       \tARCHIVE can also be a .ipcc file for carrier bundles.\n"
 		 "  -u, --uninstall APPID\tUninstall app specified by APPID.\n"
 		 "  -g, --upgrade APPID\tUpgrade app specified by APPID.\n"
 		 "  -L, --list-archives\tList archived applications, possible options:\n"
@@ -525,152 +526,242 @@ run_again:
 			goto leave_cleanup;
 		}
 
-		/* extract iTunesMetadata.plist from package */
-		char *zbuf = NULL;
-		uint32_t len = 0;
-		if (zip_f_get_contents(zf, "iTunesMetadata.plist", 0, &zbuf, &len) == 0) {
-			meta = plist_new_data(zbuf, len);
-		}
-		if (zbuf) {
-			free(zbuf);
-		}
+		plist_t client_opts = instproxy_client_options_new();
 
-		/* we need to get the CFBundleName first */
-		plist_t info = NULL;
-		zbuf = NULL;
-		len = 0;
-		if (zip_f_get_contents(zf, "Info.plist", ZIP_FL_NODIR, &zbuf, &len) < 0) {
-			zip_unchange_all(zf);
-			zip_close(zf);
-			goto leave_cleanup;
-		}
-		if (memcmp(zbuf, "bplist00", 8) == 0) {
-			plist_from_bin(zbuf, len, &info);
+		if ((strlen(appid) > 5) && (strcmp(&appid[strlen(appid)-5], ".ipcc") == 0)) {
+			char* ipcc = strdup(appid);
+			if ((asprintf(&pkgname, "%s/%s", PKG_PATH, basename(ipcc)) > 0) && pkgname) {
+				afc_make_directory(afc, pkgname);
+			}
+
+			printf("Uploading %s package contents...\n", basename(ipcc));
+
+			/* extract the contents of the .ipcc file to PublicStaging/<name>.ipcc directory */
+			zip_uint64_t numzf = zip_get_num_entries(zf, 0);
+			zip_uint64_t i = 0;
+			for (i = 0; numzf > 0 && i < numzf; i++) {
+				const char* zname = zip_get_name(zf, i, 0);
+				char* dstpath = NULL;
+				if (!zname) continue;
+				if (zname[strlen(zname)-1] == '/') {
+					// directory
+					if ((asprintf(&dstpath, "%s/%s/%s", PKG_PATH, basename(ipcc), zname) > 0) && dstpath) {
+						afc_make_directory(afc, dstpath);						}
+					free(dstpath);
+					dstpath = NULL;
+				} else {
+					// file
+					struct zip_file* zfile = zip_fopen_index(zf, i, 0);
+					if (!zfile) continue;
+
+					if ((asprintf(&dstpath, "%s/%s/%s", PKG_PATH, basename(ipcc), zname) <= 0) || !dstpath || (afc_file_open(afc, dstpath, AFC_FOPEN_WRONLY, &af) != AFC_E_SUCCESS)) {
+						fprintf(stderr, "ERROR: can't open afc://%s for writing\n", dstpath);
+						free(dstpath);
+						dstpath = NULL;
+						zip_fclose(zfile);
+						continue;
+					}
+
+					struct zip_stat zs;
+					zip_stat_init(&zs);
+					if (zip_stat_index(zf, i, 0, &zs) != 0) {
+						fprintf(stderr, "ERROR: zip_stat_index %ld failed!\n", i);
+						free(dstpath);
+						dstpath = NULL;
+						zip_fclose(zfile);
+						continue;
+					}
+
+					free(dstpath);
+					dstpath = NULL;
+
+					zip_uint64_t zfsize = 0;
+					while (zfsize < zs.size) {
+						zip_int64_t amount = zip_fread(zfile, buf, sizeof(buf));
+						if (amount == 0) {
+							break;
+						}
+
+						if (amount > 0) {
+							uint32_t written, total = 0;
+							while (total < amount) {
+								written = 0;
+								if (afc_file_write(afc, af, buf, amount, &written) !=
+									AFC_E_SUCCESS) {
+									fprintf(stderr, "AFC Write error!\n");
+									break;
+								}
+								total += written;
+							}
+							if (total != amount) {
+								fprintf(stderr, "Error: wrote only %d of %zu\n", total, amount);
+								afc_file_close(afc, af);
+								zip_fclose(zfile);
+								free(dstpath);
+								goto leave_cleanup;
+							}
+						}
+
+						zfsize += amount;
+					}
+
+					afc_file_close(afc, af);
+					af = 0;
+
+					zip_fclose(zfile);
+				}
+			}
+			free(ipcc);
+			printf("done.\n");
+
+			instproxy_client_options_add(client_opts, "PackageType", "CarrierBundle", NULL);
 		} else {
-			plist_from_xml(zbuf, len, &info);
-		}
-		free(zbuf);
+			/* extract iTunesMetadata.plist from package */
+			char *zbuf = NULL;
+			uint32_t len = 0;
+			if (zip_f_get_contents(zf, "iTunesMetadata.plist", 0, &zbuf, &len) == 0) {
+				meta = plist_new_data(zbuf, len);
+			}
+			if (zbuf) {
+				free(zbuf);
+			}
 
-		if (!info) {
-			fprintf(stderr, "Could not parse Info.plist!\n");
-			zip_unchange_all(zf);
-			zip_close(zf);
-			goto leave_cleanup;
-		}
-
-		char *bundlename = NULL;
-
-		plist_t bname = plist_dict_get_item(info, "CFBundleName");
-		if (bname) {
-			plist_get_string_val(bname, &bundlename);
-		}
-		plist_free(info);
-
-		if (!bundlename) {
-			fprintf(stderr, "Could not determine CFBundleName!\n");
-			zip_unchange_all(zf);
-			zip_close(zf);
-			goto leave_cleanup;
-		}
-
-		char *sinfname = NULL;
-	       	if (asprintf(&sinfname, "Payload/%s.app/SC_Info/%s.sinf", bundlename, bundlename) < 0) {
-			fprintf(stderr, "Out of memory!?\n");
-			goto leave_cleanup;
-		}
-		free(bundlename);
-
-		/* extract .sinf from package */
-		zbuf = NULL;
-		len = 0;
-		if (zip_f_get_contents(zf, sinfname, 0, &zbuf, &len) == 0) {
-			sinf = plist_new_data(zbuf, len);
-		}
-		free(sinfname);
-		if (zbuf) {
+			/* we need to get the CFBundleName first */
+			plist_t info = NULL;
+			zbuf = NULL;
+			len = 0;
+			if (zip_f_get_contents(zf, "Info.plist", ZIP_FL_NODIR, &zbuf, &len) < 0) {
+				zip_unchange_all(zf);
+				zip_close(zf);
+				goto leave_cleanup;
+			}
+			if (memcmp(zbuf, "bplist00", 8) == 0) {
+				plist_from_bin(zbuf, len, &info);
+			} else {
+				plist_from_xml(zbuf, len, &info);
+			}
 			free(zbuf);
-		}
 
+			if (!info) {
+				fprintf(stderr, "Could not parse Info.plist!\n");
+				zip_unchange_all(zf);
+				zip_close(zf);
+				goto leave_cleanup;
+			}
+
+			char *bundlename = NULL;
+
+			plist_t bname = plist_dict_get_item(info, "CFBundleName");
+			if (bname) {
+				plist_get_string_val(bname, &bundlename);
+			}
+			plist_free(info);
+
+			if (!bundlename) {
+				fprintf(stderr, "Could not determine CFBundleName!\n");
+				zip_unchange_all(zf);
+				zip_close(zf);
+				goto leave_cleanup;
+			}
+
+			char *sinfname = NULL;
+		       	if (asprintf(&sinfname, "Payload/%s.app/SC_Info/%s.sinf", bundlename, bundlename) < 0) {
+				fprintf(stderr, "Out of memory!?\n");
+				goto leave_cleanup;
+			}
+			free(bundlename);
+
+			/* extract .sinf from package */
+			zbuf = NULL;
+			len = 0;
+			if (zip_f_get_contents(zf, sinfname, 0, &zbuf, &len) == 0) {
+				sinf = plist_new_data(zbuf, len);
+			}
+			free(sinfname);
+			if (zbuf) {
+				free(zbuf);
+			}
+
+			/* copy archive to device */
+			f = fopen(appid, "r");
+			if (!f) {
+				fprintf(stderr, "fopen: %s: %s\n", appid, strerror(errno));
+				goto leave_cleanup;
+			}
+
+			pkgname = NULL;
+			if (asprintf(&pkgname, "%s/%s", PKG_PATH, basename(appid)) < 0) {
+				fprintf(stderr, "Out of memory!?\n");
+				goto leave_cleanup;
+			}
+
+			printf("Copying '%s' --> '%s'\n", appid, pkgname);
+
+			char **strs = NULL;
+			if (afc_get_file_info(afc, PKG_PATH, &strs) != AFC_E_SUCCESS) {
+				if (afc_make_directory(afc, PKG_PATH) != AFC_E_SUCCESS) {
+					fprintf(stderr, "WARNING: Could not create directory '%s' on device!\n", PKG_PATH);
+				}
+			}
+			if (strs) {
+				int i = 0;
+				while (strs[i]) {
+					free(strs[i]);
+					i++;
+				}
+				free(strs);
+			}
+
+			if ((afc_file_open(afc, pkgname, AFC_FOPEN_WRONLY, &af) !=
+				 AFC_E_SUCCESS) || !af) {
+				fclose(f);
+				fprintf(stderr, "afc_file_open on '%s' failed!\n", pkgname);
+				free(pkgname);
+				goto leave_cleanup;
+			}
+
+			size_t amount = 0;
+			do {
+				amount = fread(buf, 1, sizeof(buf), f);
+				if (amount > 0) {
+					uint32_t written, total = 0;
+					while (total < amount) {
+						written = 0;
+						if (afc_file_write(afc, af, buf, amount, &written) !=
+							AFC_E_SUCCESS) {
+							fprintf(stderr, "AFC Write error!\n");
+							break;
+						}
+						total += written;
+					}
+					if (total != amount) {
+						fprintf(stderr, "Error: wrote only %d of %zu\n", total,
+							amount);
+						afc_file_close(afc, af);
+						fclose(f);
+						free(pkgname);
+						goto leave_cleanup;
+					}
+				}
+			}
+			while (amount > 0);
+
+			afc_file_close(afc, af);
+			fclose(f);
+
+			printf("done.\n");
+
+			if (sinf) {
+				instproxy_client_options_add(client_opts, "ApplicationSINF", sinf, NULL);
+			}
+			if (meta) {
+				instproxy_client_options_add(client_opts, "iTunesMetadata", meta, NULL);
+			}
+		}
 		zip_unchange_all(zf);
 		zip_close(zf);
 
-		/* copy archive to device */
-		f = fopen(appid, "r");
-		if (!f) {
-			fprintf(stderr, "fopen: %s: %s\n", appid, strerror(errno));
-			goto leave_cleanup;
-		}
-
-		pkgname = NULL;
-		if (asprintf(&pkgname, "%s/%s", PKG_PATH, basename(appid)) < 0) {
-			fprintf(stderr, "Out of memory!?\n");
-			goto leave_cleanup;
-		}
-
-		printf("Copying '%s' --> '%s'\n", appid, pkgname);
-
-		char **strs = NULL;
-		if (afc_get_file_info(afc, PKG_PATH, &strs) != AFC_E_SUCCESS) {
-			if (afc_make_directory(afc, PKG_PATH) != AFC_E_SUCCESS) {
-				fprintf(stderr, "WARNING: Could not create directory '%s' on device!\n", PKG_PATH);
-			}
-		}
-		if (strs) {
-			int i = 0;
-			while (strs[i]) {
-				free(strs[i]);
-				i++;
-			}
-			free(strs);
-		}
-
-		if ((afc_file_open(afc, pkgname, AFC_FOPEN_WRONLY, &af) !=
-			 AFC_E_SUCCESS) || !af) {
-			fclose(f);
-			fprintf(stderr, "afc_file_open on '%s' failed!\n", pkgname);
-			free(pkgname);
-			goto leave_cleanup;
-		}
-
-		size_t amount = 0;
-		do {
-			amount = fread(buf, 1, sizeof(buf), f);
-			if (amount > 0) {
-				uint32_t written, total = 0;
-				while (total < amount) {
-					written = 0;
-					if (afc_file_write(afc, af, buf, amount, &written) !=
-						AFC_E_SUCCESS) {
-						fprintf(stderr, "AFC Write error!\n");
-						break;
-					}
-					total += written;
-				}
-				if (total != amount) {
-					fprintf(stderr, "Error: wrote only %d of %zu\n", total,
-							amount);
-					afc_file_close(afc, af);
-					fclose(f);
-					free(pkgname);
-					goto leave_cleanup;
-				}
-			}
-		}
-		while (amount > 0);
-
-		afc_file_close(afc, af);
-		fclose(f);
-
-		printf("done.\n");
-
 		/* perform installation or upgrade */
-		plist_t client_opts = instproxy_client_options_new();
-		if (sinf) {
-			instproxy_client_options_add(client_opts, "ApplicationSINF", sinf, NULL);
-		}
-		if (meta) {
-			instproxy_client_options_add(client_opts, "iTunesMetadata", meta, NULL);
-		}
 		if (install_mode) {
 			printf("Installing '%s'\n", pkgname);
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
