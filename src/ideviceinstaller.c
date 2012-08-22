@@ -220,6 +220,7 @@ static void print_usage(int argc, char **argv)
 		 "  -a, --archive APPID\tArchive app specified by APPID, possible options:\n"
 		 "       -o uninstall\t- uninstall the package after making an archive\n"
 		 "       -o app_only\t- archive application data only\n"
+		 "       -o docs_only\t- archive documents (user data) only\n"
 		 "       -o copy=PATH\t- copy the app archive to directory PATH when done\n"
 		 "       -o remove\t- only valid when copy=PATH is used: remove after copy\n"
 		 "  -r, --restore APPID\tRestore archived app specified by APPID\n"
@@ -885,6 +886,7 @@ run_again:
 		int remove_after_copy = 0;
 		int skip_uninstall = 1;
 		int app_only = 0;
+		int docs_only = 0;
 		plist_t client_opts = NULL;
 
 		/* look for options */
@@ -896,6 +898,10 @@ run_again:
 					skip_uninstall = 0;
 				} else if (!strcmp(elem, "app_only")) {
 					app_only = 1;
+					docs_only = 0;
+				} else if (!strcmp(elem, "docs_only")) {
+					docs_only = 1;
+					app_only = 0;
 				} else if ((strlen(elem) > 5) && !strncmp(elem, "copy=", 5)) {
 					copy_path = strdup(elem+5);
 				} else if (!strcmp(elem, "remove")) {
@@ -905,13 +911,15 @@ run_again:
 			}
 		}
 
-		if (skip_uninstall || app_only) {
+		if (skip_uninstall || app_only || docs_only) {
 			client_opts = instproxy_client_options_new();
 			if (skip_uninstall) {
 				instproxy_client_options_add(client_opts, "SkipUninstall", 1, NULL);
 			}
 			if (app_only) {
 				instproxy_client_options_add(client_opts, "ArchiveType", "ApplicationOnly", NULL);
+			} else if (docs_only) {
+				instproxy_client_options_add(client_opts, "ArchiveType", "DocumentsOnly", NULL);
 			}
 		}
 
