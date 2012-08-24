@@ -566,7 +566,7 @@ run_again:
 					struct zip_stat zs;
 					zip_stat_init(&zs);
 					if (zip_stat_index(zf, i, 0, &zs) != 0) {
-						fprintf(stderr, "ERROR: zip_stat_index %ld failed!\n", i);
+						fprintf(stderr, "ERROR: zip_stat_index %" PRIu64 " failed!\n", i);
 						free(dstpath);
 						dstpath = NULL;
 						zip_fclose(zfile);
@@ -595,7 +595,7 @@ run_again:
 								total += written;
 							}
 							if (total != amount) {
-								fprintf(stderr, "Error: wrote only %d of %zu\n", total, amount);
+								fprintf(stderr, "Error: wrote only %d of %" PRIi64 "\n", total, amount);
 								afc_file_close(afc, af);
 								zip_fclose(zfile);
 								free(dstpath);
