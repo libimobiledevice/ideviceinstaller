@@ -131,7 +131,7 @@ static void status_cb(const char *operation, plist_t status)
 	}
 }
 
-static int zip_f_get_contents(struct zip *zf, const char *filename, int locate_flags, char **buffer, uint32_t *len)
+static int zip_get_contents(struct zip *zf, const char *filename, int locate_flags, char **buffer, uint32_t *len)
 {
 	struct zip_stat zs;
 	struct zip_file *zfile;
@@ -620,7 +620,7 @@ run_again:
 			/* extract iTunesMetadata.plist from package */
 			char *zbuf = NULL;
 			uint32_t len = 0;
-			if (zip_f_get_contents(zf, "iTunesMetadata.plist", 0, &zbuf, &len) == 0) {
+			if (zip_get_contents(zf, "iTunesMetadata.plist", 0, &zbuf, &len) == 0) {
 				meta = plist_new_data(zbuf, len);
 			}
 			if (zbuf) {
@@ -631,7 +631,7 @@ run_again:
 			plist_t info = NULL;
 			zbuf = NULL;
 			len = 0;
-			if (zip_f_get_contents(zf, "Info.plist", ZIP_FL_NODIR, &zbuf, &len) < 0) {
+			if (zip_get_contents(zf, "Info.plist", ZIP_FL_NODIR, &zbuf, &len) < 0) {
 				zip_unchange_all(zf);
 				zip_close(zf);
 				goto leave_cleanup;
@@ -675,7 +675,7 @@ run_again:
 			/* extract .sinf from package */
 			zbuf = NULL;
 			len = 0;
-			if (zip_f_get_contents(zf, sinfname, 0, &zbuf, &len) == 0) {
+			if (zip_get_contents(zf, sinfname, 0, &zbuf, &len) == 0) {
 				sinf = plist_new_data(zbuf, len);
 			}
 			free(sinfname);
