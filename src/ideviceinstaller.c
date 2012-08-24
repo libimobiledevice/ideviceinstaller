@@ -631,7 +631,24 @@ run_again:
 			plist_t info = NULL;
 			zbuf = NULL;
 			len = 0;
-			if (zip_get_contents(zf, "Info.plist", ZIP_FL_NODIR, &zbuf, &len) < 0) {
+			char filename[256];
+
+			/* check for "Payload" directory */
+			strcpy(filename, zip_get_name(zf, 0, 0));
+			if (strcmp(filename, "Payload") != 0) {
+				fprintf(stderr, "Unable to locate Payload folder in archive!\n");
+				zip_unchange_all(zf);
+				zip_close(zf);
+				goto leave_cleanup;
+			}
+
+			/* check for "*.app" directory */
+			strcpy(filename, zip_get_name(zf, 1, 0));
+
+			/* construct full filename to Info.plist */
+			strcat(filename, "Info.plist");
+
+			if (zip_get_contents(zf, filename, 0, &zbuf, &len) < 0) {
 				zip_unchange_all(zf);
 				zip_close(zf);
 				goto leave_cleanup;
