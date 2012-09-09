@@ -620,8 +620,14 @@ run_again:
 			/* extract iTunesMetadata.plist from package */
 			char *zbuf = NULL;
 			uint32_t len = 0;
+			plist_t meta_dict = NULL;
 			if (zip_get_contents(zf, "iTunesMetadata.plist", 0, &zbuf, &len) == 0) {
 				meta = plist_new_data(zbuf, len);
+				if (memcmp(zbuf, "bplist00", 8) == 0) {
+					plist_from_bin(zbuf, len, &meta_dict);
+				} else {
+					plist_from_xml(zbuf, len, &meta_dict);
+				}
 			}
 			if (zbuf) {
 				free(zbuf);
@@ -632,10 +638,11 @@ run_again:
 			zbuf = NULL;
 			len = 0;
 			char filename[256];
+			filename[0] = '\0';
 
 			/* check for "Payload" directory */
-			strcpy(filename, zip_get_name(zf, 0, 0));
-			if (strcmp(filename, "Payload") != 0) {
+			int zindex = zip_name_locate(zf, "Payload/", 0);
+			if (zindex < 0) {
 				fprintf(stderr, "Unable to locate Payload folder in archive!\n");
 				zip_unchange_all(zf);
 				zip_close(zf);
@@ -643,7 +650,26 @@ run_again:
 			}
 
 			/* check for "*.app" directory */
-			strcpy(filename, zip_get_name(zf, 1, 0));
+			if (meta_dict) {
+				plist_t nm = plist_dict_get_item(meta_dict, "itemName");
+				plist_t fe = plist_dict_get_item(meta_dict, "fileExtension");
+				if (nm && (plist_get_node_type(nm) == PLIST_STRING) && fe && (plist_get_node_type(fe) == PLIST_STRING)) {
+					char* val = NULL;
+					plist_get_string_val(nm, &val);
+					if (val) {
+						strcpy(filename, "Payload/");
+						strcat(filename, val);
+						free(val);
+						val = NULL;
+						plist_get_string_val(fe, &val);
+						strcat(filename, val);
+						strcat(filename, "/");
+					}
+				}
+			}
+			if (filename[0] == '\0') {
+				strcpy(filename, zip_get_name(zf, zindex+1, 0));
+			}
 
 			/* construct full filename to Info.plist */
 			strcat(filename, "Info.plist");
