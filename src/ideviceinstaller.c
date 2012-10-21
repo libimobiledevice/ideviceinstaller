@@ -633,7 +633,6 @@ run_again:
 				free(zbuf);
 			}
 
-			/* we need to get the CFBundleName first */
 			plist_t info = NULL;
 			zbuf = NULL;
 			len = 0;
@@ -693,27 +692,27 @@ run_again:
 				goto leave_cleanup;
 			}
 
-			char *bundlename = NULL;
+			char *bundleexecutable = NULL;
 
-			plist_t bname = plist_dict_get_item(info, "CFBundleName");
+			plist_t bname = plist_dict_get_item(info, "CFBundleExecutable");
 			if (bname) {
-				plist_get_string_val(bname, &bundlename);
+				plist_get_string_val(bname, &bundleexecutable);
 			}
 			plist_free(info);
 
-			if (!bundlename) {
-				fprintf(stderr, "Could not determine CFBundleName!\n");
+			if (!bundleexecutable) {
+				fprintf(stderr, "Could not determine value for CFBundleExecutable!\n");
 				zip_unchange_all(zf);
 				zip_close(zf);
 				goto leave_cleanup;
 			}
 
 			char *sinfname = NULL;
-		       	if (asprintf(&sinfname, "Payload/%s.app/SC_Info/%s.sinf", bundlename, bundlename) < 0) {
+		       	if (asprintf(&sinfname, "Payload/%s.app/SC_Info/%s.sinf", bundleexecutable, bundleexecutable) < 0) {
 				fprintf(stderr, "Out of memory!?\n");
 				goto leave_cleanup;
 			}
-			free(bundlename);
+			free(bundleexecutable);
 
 			/* extract .sinf from package */
 			zbuf = NULL;
