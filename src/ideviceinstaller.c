@@ -48,7 +48,7 @@
 const char PKG_PATH[] = "PublicStaging";
 const char APPARCH_PATH[] = "ApplicationArchives";
 
-char *uuid = NULL;
+char *udid = NULL;
 char *options = NULL;
 char *appid = NULL;
 
@@ -205,7 +205,7 @@ static void print_usage(int argc, char **argv)
 	printf("Usage: %s OPTIONS\n", (name ? name + 1 : argv[0]));
 	printf("Manage apps on an iDevice.\n\n");
 	printf
-		("  -U, --uuid UUID\tTarget specific device by its 40-digit device UUID.\n"
+		("  -U, --udid UDID\tTarget specific device by its 40-digit device UDID.\n"
 		 "  -l, --list-apps\tList apps, possible options:\n"
 		 "       -o list_user\t- list user apps only (this is the default)\n"
 		 "       -o list_system\t- list system apps only\n"
@@ -234,7 +234,7 @@ static void parse_opts(int argc, char **argv)
 {
 	static struct option longopts[] = {
 		{"help", 0, NULL, 'h'},
-		{"uuid", 1, NULL, 'U'},
+		{"udid", 1, NULL, 'U'},
 		{"list-apps", 0, NULL, 'l'},
 		{"install", 1, NULL, 'i'},
 		{"uninstall", 1, NULL, 'u'},
@@ -262,12 +262,12 @@ static void parse_opts(int argc, char **argv)
 			exit(0);
 		case 'U':
 			if (strlen(optarg) != 40) {
-				printf("%s: invalid UUID specified (length != 40)\n",
+				printf("%s: invalid UDID specified (length != 40)\n",
 					   argv[0]);
 				print_usage(argc, argv);
 				exit(2);
 			}
-			uuid = strdup(optarg);
+			udid = strdup(optarg);
 			break;
 		case 'l':
 			list_apps_mode = 1;
@@ -341,7 +341,7 @@ int main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (IDEVICE_E_SUCCESS != idevice_new(&phone, uuid)) {
+	if (IDEVICE_E_SUCCESS != idevice_new(&phone, udid)) {
 		fprintf(stderr, "No iPhone found, is it plugged in?\n");
 		return -1;
 	}
@@ -1178,8 +1178,8 @@ run_again:
 	}
 	idevice_free(phone);
 
-	if (uuid) {
-		free(uuid);
+	if (udid) {
+		free(udid);
 	}
 	if (appid) {
 		free(appid);
