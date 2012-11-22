@@ -214,7 +214,7 @@ static void print_usage(int argc, char **argv)
 		 "  -i, --install ARCHIVE\tInstall app from package file specified by ARCHIVE.\n"
 		 "                       \tARCHIVE can also be a .ipcc file for carrier bundles.\n"
 		 "  -u, --uninstall APPID\tUninstall app specified by APPID.\n"
-		 "  -g, --upgrade APPID\tUpgrade app specified by APPID.\n"
+		 "  -g, --upgrade ARCHIVE\tUpgrade app from package file specified by ARCHIVE.\n"
 		 "  -L, --list-archives\tList archived applications, possible options:\n"
 		 "       -o xml\t\t- print full output as xml plist\n"
 		 "  -a, --archive APPID\tArchive app specified by APPID, possible options:\n"
