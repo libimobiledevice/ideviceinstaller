@@ -726,7 +726,7 @@ run_again:
 			}
 
 			/* copy archive to device */
-			f = fopen(appid, "r");
+			f = fopen(appid, "rb");
 			if (!f) {
 				fprintf(stderr, "fopen: %s: %s\n", appid, strerror(errno));
 				goto leave_cleanup;
@@ -1026,7 +1026,7 @@ run_again:
 			}
 			free(copy_path);
 
-			f = fopen(localfile, "w");
+			f = fopen(localfile, "wb");
 			if (!f) {
 				fprintf(stderr, "ERROR: fopen: %s: %s\n", localfile, strerror(errno));
 				free(localfile);
