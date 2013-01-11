@@ -176,6 +176,61 @@ static int zip_get_contents(struct zip *zf, const char *filename, int locate_fla
 	return 0;
 }
 
+static int zip_get_app_directory(struct zip* zf, char** path)
+{
+	int i = 0;
+	int c = zip_get_num_files(zf);
+	int len = 0;
+	const char* name = NULL;
+
+	/* look through all filenames in the archive */
+	do {
+		/* get filename at current index */
+		name = zip_get_name(zf, i++, 0);
+		if (name != NULL) {
+			/* check if we have a "Payload/.../" name */
+			len = strlen(name);
+			if (!strncmp(name, "Payload/", 8) && (len > 8)) {
+				/* locate the second directory delimiter */
+				const char* p = name + 8;
+				do {
+					if (*p == '/') {
+						break;
+					}
+				} while(p++ != NULL);
+
+				/* try next entry if not found */
+				if (p == NULL)
+					continue;
+
+				len = p - name + 1;
+
+				if (*path != NULL) {
+					free(*path);
+					*path = NULL;
+				}
+
+				/* allocate and copy filename */
+				*path = (char*)malloc(len + 1);
+				strncpy(*path, name, len);
+
+				/* add terminating null character */
+				char* t = *path + len;
+				*t = '\0';
+				break;
+			}
+		}
+	} while(i < c);
+
+	/* check if the path actually exists */
+	int zindex = zip_name_locate(zf, *path, 0);
+	if (zindex < 0) {
+		return -1;
+	}
+
+	return 0;
+}
+
 static void do_wait_when_needed()
 {
 	int i = 0;
@@ -633,44 +688,23 @@ run_again:
 				free(zbuf);
 			}
 
-			plist_t info = NULL;
+			/* determine .app directory in archive */
 			zbuf = NULL;
 			len = 0;
+			plist_t info = NULL;
 			char filename[256];
 			filename[0] = '\0';
+			char* app_directory_name = NULL;
 
-			/* check for "Payload" directory */
-			int zindex = zip_name_locate(zf, "Payload/", 0);
-			if (zindex < 0) {
-				fprintf(stderr, "Unable to locate Payload folder in archive!\n");
-				zip_unchange_all(zf);
-				zip_close(zf);
+			if (zip_get_app_directory(zf, &app_directory_name)) {
+				fprintf(stderr, "Unable to locate app directory in archive!\n");
 				goto leave_cleanup;
 			}
 
-			/* check for "*.app" directory */
-			if (meta_dict) {
-				plist_t nm = plist_dict_get_item(meta_dict, "itemName");
-				plist_t fe = plist_dict_get_item(meta_dict, "fileExtension");
-				if (nm && (plist_get_node_type(nm) == PLIST_STRING) && fe && (plist_get_node_type(fe) == PLIST_STRING)) {
-					char* val = NULL;
-					plist_get_string_val(nm, &val);
-					if (val) {
-						strcpy(filename, "Payload/");
-						strcat(filename, val);
-						free(val);
-						val = NULL;
-						plist_get_string_val(fe, &val);
-						strcat(filename, val);
-						strcat(filename, "/");
-					}
-				}
-			}
-			if (filename[0] == '\0') {
-				strcpy(filename, zip_get_name(zf, zindex+1, 0));
-			}
-
 			/* construct full filename to Info.plist */
+			strcpy(filename, app_directory_name);
+			free(app_directory_name);
+			app_directory_name = NULL;
 			strcat(filename, "Info.plist");
 
 			if (zip_get_contents(zf, filename, 0, &zbuf, &len) < 0) {
@@ -708,7 +742,7 @@ run_again:
 			}
 
 			char *sinfname = NULL;
-		       	if (asprintf(&sinfname, "Payload/%s.app/SC_Info/%s.sinf", bundleexecutable, bundleexecutable) < 0) {
+			if (asprintf(&sinfname, "Payload/%s.app/SC_Info/%s.sinf", bundleexecutable, bundleexecutable) < 0) {
 				fprintf(stderr, "Out of memory!?\n");
 				goto leave_cleanup;
 			}
