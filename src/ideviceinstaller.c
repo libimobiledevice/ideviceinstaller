@@ -68,7 +68,7 @@ int op_completed = 0;
 int err_occured = 0;
 int notified = 0;
 
-#ifdef HAVE_LIBIMOBILEDEVICE_1_0
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 static void notifier(const char *notification, void *unused)
 #else
 static void notifier(const char *notification)
@@ -419,7 +419,7 @@ int main(int argc, char **argv)
 		goto leave_cleanup;
 	}
 
-#ifdef HAVE_LIBIMOBILEDEVICE_1_0
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	np_set_notify_callback(np, notifier, NULL);
 #else
 	np_set_notify_callback(np, notifier);
