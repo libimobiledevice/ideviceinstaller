@@ -388,7 +388,11 @@ int main(int argc, char **argv)
 	instproxy_client_t ipc = NULL;
 	np_client_t np = NULL;
 	afc_client_t afc = NULL;
-	uint16_t port = 0;
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
+	lockdownd_service_descriptor_t service = NULL;
+#else
+	uint16_t service = 0;
+#endif
 	int res = 0;
 
 	parse_opts(argc, argv);
@@ -408,13 +412,13 @@ int main(int argc, char **argv)
 
 	if ((lockdownd_start_service
 		 (client, "com.apple.mobile.notification_proxy",
-		  &port) != LOCKDOWN_E_SUCCESS) || !port) {
+		  &service) != LOCKDOWN_E_SUCCESS) || !service) {
 		fprintf(stderr,
 				"Could not start com.apple.mobile.notification_proxy!\n");
 		goto leave_cleanup;
 	}
 
-	if (np_client_new(phone, port, &np) != NP_E_SUCCESS) {
+	if (np_client_new(phone, service, &np) != NP_E_SUCCESS) {
 		fprintf(stderr, "Could not connect to notification_proxy!\n");
 		goto leave_cleanup;
 	}
@@ -430,16 +434,22 @@ int main(int argc, char **argv)
 	np_observe_notifications(np, noties);
 
 run_again:
-	port = 0;
-	if ((lockdownd_start_service
-		 (client, "com.apple.mobile.installation_proxy",
-		  &port) != LOCKDOWN_E_SUCCESS) || !port) {
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
+	if (service) {
+		lockdownd_service_descriptor_free(service);
+	}
+	service = NULL;
+#else
+	service = 0;
+#endif
+	if ((lockdownd_start_service(client, "com.apple.mobile.installation_proxy",
+		  &service) != LOCKDOWN_E_SUCCESS) || !service) {
 		fprintf(stderr,
 				"Could not start com.apple.mobile.installation_proxy!\n");
 		goto leave_cleanup;
 	}
 
-	if (instproxy_client_new(phone, port, &ipc) != INSTPROXY_E_SUCCESS) {
+	if (instproxy_client_new(phone, service, &ipc) != INSTPROXY_E_SUCCESS) {
 		fprintf(stderr, "Could not connect to installation_proxy!\n");
 		goto leave_cleanup;
 	}
@@ -554,9 +564,16 @@ run_again:
 		uint64_t af = 0;
 		char buf[8192];
 
-		port = 0;
-		if ((lockdownd_start_service(client, "com.apple.afc", &port) !=
-			 LOCKDOWN_E_SUCCESS) || !port) {
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
+		if (service) {
+			lockdownd_service_descriptor_free(service);
+		}
+		service = NULL;
+#else
+		service = 0;
+#endif
+		if ((lockdownd_start_service(client, "com.apple.afc", &service) !=
+			 LOCKDOWN_E_SUCCESS) || !service) {
 			fprintf(stderr, "Could not start com.apple.afc!\n");
 			goto leave_cleanup;
 		}
@@ -564,7 +581,7 @@ run_again:
 		lockdownd_client_free(client);
 		client = NULL;
 
-		if (afc_client_new(phone, port, &afc) != INSTPROXY_E_SUCCESS) {
+		if (afc_client_new(phone, service, &afc) != INSTPROXY_E_SUCCESS) {
 			fprintf(stderr, "Could not connect to AFC!\n");
 			goto leave_cleanup;
 		}
@@ -1013,8 +1030,15 @@ run_again:
 				goto leave_cleanup;
 			}
 
-			port = 0;
-			if ((lockdownd_start_service(client, "com.apple.afc", &port) != LOCKDOWN_E_SUCCESS) || !port) {
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
+			if (service) {
+				lockdownd_service_descriptor_free(service);
+			}
+			service = NULL;
+#else
+			service = 0;
+#endif
+			if ((lockdownd_start_service(client, "com.apple.afc", &service) != LOCKDOWN_E_SUCCESS) || !service) {
 				fprintf(stderr, "Could not start com.apple.afc!\n");
 				free(copy_path);
 				goto leave_cleanup;
@@ -1023,7 +1047,7 @@ run_again:
 			lockdownd_client_free(client);
 			client = NULL;
 
-			if (afc_client_new(phone, port, &afc) != INSTPROXY_E_SUCCESS) {
+			if (afc_client_new(phone, service, &afc) != INSTPROXY_E_SUCCESS) {
 				fprintf(stderr, "Could not connect to AFC!\n");
 				goto leave_cleanup;
 			}
