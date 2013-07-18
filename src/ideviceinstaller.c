@@ -34,6 +34,7 @@
 #include <libgen.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <sys/stat.h>
 
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
@@ -381,6 +382,52 @@ static void parse_opts(int argc, char **argv)
 	}
 }
 
+static int afc_upload_file(afc_client_t afc, const char* filename, const char* dstfn)
+{
+	FILE *f = NULL;
+	uint64_t af = 0;
+	char buf[8192];
+
+	f = fopen(filename, "rb");
+	if (!f) {
+		fprintf(stderr, "fopen: %s: %s\n", appid, strerror(errno));
+		return -1;
+	}
+
+	if ((afc_file_open(afc, dstfn, AFC_FOPEN_WRONLY, &af) != AFC_E_SUCCESS) || !af) {
+		fclose(f);
+		fprintf(stderr, "afc_file_open on '%s' failed!\n", dstfn);
+		return -1;
+	}
+
+	size_t amount = 0;
+	do {
+		amount = fread(buf, 1, sizeof(buf), f);
+		if (amount > 0) {
+			uint32_t written, total = 0;
+			while (total < amount) {
+				written = 0;
+				if (afc_file_write(afc, af, buf, amount, &written) != AFC_E_SUCCESS) {
+					fprintf(stderr, "AFC Write error!\n");
+					break;
+				}
+				total += written;
+			}
+			if (total != amount) {
+				fprintf(stderr, "Error: wrote only %d of %zu\n", total, amount);
+				afc_file_close(afc, af);
+				fclose(f);
+				return -1;
+			}
+		}
+	} while (amount > 0);
+
+	afc_file_close(afc, af);
+	fclose(f);
+
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	idevice_t phone = NULL;
@@ -560,7 +607,6 @@ run_again:
 		plist_t meta = NULL;
 		char *pkgname = NULL;
 		struct stat fst;
-		FILE *f = NULL;
 		uint64_t af = 0;
 		char buf[8192];
 
@@ -777,12 +823,6 @@ run_again:
 			}
 
 			/* copy archive to device */
-			f = fopen(appid, "rb");
-			if (!f) {
-				fprintf(stderr, "fopen: %s: %s\n", appid, strerror(errno));
-				goto leave_cleanup;
-			}
-
 			pkgname = NULL;
 			if (asprintf(&pkgname, "%s/%s", PKG_PATH, basename(appid)) < 0) {
 				fprintf(stderr, "Out of memory!?\n");
@@ -806,42 +846,10 @@ run_again:
 				free(strs);
 			}
 
-			if ((afc_file_open(afc, pkgname, AFC_FOPEN_WRONLY, &af) !=
-				 AFC_E_SUCCESS) || !af) {
-				fclose(f);
-				fprintf(stderr, "afc_file_open on '%s' failed!\n", pkgname);
+			if (afc_upload_file(afc, appid, pkgname) < 0) {
 				free(pkgname);
 				goto leave_cleanup;
 			}
-
-			size_t amount = 0;
-			do {
-				amount = fread(buf, 1, sizeof(buf), f);
-				if (amount > 0) {
-					uint32_t written, total = 0;
-					while (total < amount) {
-						written = 0;
-						if (afc_file_write(afc, af, buf, amount, &written) !=
-							AFC_E_SUCCESS) {
-							fprintf(stderr, "AFC Write error!\n");
-							break;
-						}
-						total += written;
-					}
-					if (total != amount) {
-						fprintf(stderr, "Error: wrote only %d of %zu\n", total,
-							amount);
-						afc_file_close(afc, af);
-						fclose(f);
-						free(pkgname);
-						goto leave_cleanup;
-					}
-				}
-			}
-			while (amount > 0);
-
-			afc_file_close(afc, af);
-			fclose(f);
 
 			printf("done.\n");
 
