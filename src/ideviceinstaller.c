@@ -637,6 +637,21 @@ run_again:
 			goto leave_cleanup;
 		}
 
+		char **strs = NULL;
+		if (afc_get_file_info(afc, PKG_PATH, &strs) != AFC_E_SUCCESS) {
+			if (afc_make_directory(afc, PKG_PATH) != AFC_E_SUCCESS) {
+				fprintf(stderr, "WARNING: Could not create directory '%s' on device!\n", PKG_PATH);
+			}
+		}
+		if (strs) {
+			int i = 0;
+			while (strs[i]) {
+				free(strs[i]);
+				i++;
+			}
+			free(strs);
+		}
+
 		/* open install package */
 		int errp = 0;
 		struct zip *zf = zip_open(appid, 0, &errp);
@@ -830,21 +845,6 @@ run_again:
 			}
 
 			printf("Copying '%s' --> '%s'\n", appid, pkgname);
-
-			char **strs = NULL;
-			if (afc_get_file_info(afc, PKG_PATH, &strs) != AFC_E_SUCCESS) {
-				if (afc_make_directory(afc, PKG_PATH) != AFC_E_SUCCESS) {
-					fprintf(stderr, "WARNING: Could not create directory '%s' on device!\n", PKG_PATH);
-				}
-			}
-			if (strs) {
-				int i = 0;
-				while (strs[i]) {
-					free(strs[i]);
-					i++;
-				}
-				free(strs);
-			}
 
 			if (afc_upload_file(afc, appid, pkgname) < 0) {
 				free(pkgname);
