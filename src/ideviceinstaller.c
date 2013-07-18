@@ -35,6 +35,7 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
@@ -428,6 +429,42 @@ static int afc_upload_file(afc_client_t afc, const char* filename, const char* d
 	return 0;
 }
 
+static void afc_upload_dir(afc_client_t afc, const char* path, const char* afcpath)
+{
+	afc_make_directory(afc, afcpath);
+
+	DIR *dir = opendir(path);
+	if (dir) {
+		struct dirent* ep;
+		while ((ep = readdir(dir))) {
+			if ((strcmp(ep->d_name, ".") == 0) || (strcmp(ep->d_name, "..") == 0)) {
+				continue;
+			}
+			char *fpath = (char*)malloc(strlen(path)+1+strlen(ep->d_name)+1);
+			char *apath = (char*)malloc(strlen(afcpath)+1+strlen(ep->d_name)+1);
+
+			struct stat st;
+
+			strcpy(fpath, path);
+			strcat(fpath, "/");
+			strcat(fpath, ep->d_name);
+
+			strcpy(apath, afcpath);
+			strcat(apath, "/");
+			strcat(apath, ep->d_name);
+
+			if ((stat(fpath, &st) == 0) && S_ISDIR(st.st_mode)) {
+				afc_upload_dir(afc, fpath, apath);
+			} else {
+				afc_upload_file(afc, fpath, apath);
+			}
+			free(fpath);
+			free(apath);
+		}
+		closedir(dir);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	idevice_t phone = NULL;
@@ -652,17 +689,19 @@ run_again:
 			free(strs);
 		}
 
-		/* open install package */
-		int errp = 0;
-		struct zip *zf = zip_open(appid, 0, &errp);
-		if (!zf) {
-			fprintf(stderr, "ERROR: zip_open: %s: %d\n", appid, errp);
-			goto leave_cleanup;
-		}
-
 		plist_t client_opts = instproxy_client_options_new();
 
+		/* open install package */
+		int errp = 0;
+		struct zip *zf = NULL;
+		
 		if ((strlen(appid) > 5) && (strcmp(&appid[strlen(appid)-5], ".ipcc") == 0)) {
+			zf = zip_open(appid, 0, &errp);
+			if (!zf) {
+				fprintf(stderr, "ERROR: zip_open: %s: %d\n", appid, errp);
+				goto leave_cleanup;
+			}
+
 			char* ipcc = strdup(appid);
 			if ((asprintf(&pkgname, "%s/%s", PKG_PATH, basename(ipcc)) > 0) && pkgname) {
 				afc_make_directory(afc, pkgname);
@@ -749,7 +788,21 @@ run_again:
 			printf("done.\n");
 
 			instproxy_client_options_add(client_opts, "PackageType", "CarrierBundle", NULL);
+		} else if (S_ISDIR(fst.st_mode)) {
+			/* upload developer app directory */
+			instproxy_client_options_add(client_opts, "PackageType", "Developer", NULL);
+
+			asprintf(&pkgname, "%s/%s", PKG_PATH, basename(appid));
+
+			printf("Uploading %s package contents...\n", basename(appid));
+			afc_upload_dir(afc, appid, pkgname);
 		} else {
+			zf = zip_open(appid, 0, &errp);
+			if (!zf) {
+				fprintf(stderr, "ERROR: zip_open: %s: %d\n", appid, errp);
+				goto leave_cleanup;
+			}
+
 			/* extract iTunesMetadata.plist from package */
 			char *zbuf = NULL;
 			uint32_t len = 0;
@@ -860,8 +913,10 @@ run_again:
 				instproxy_client_options_add(client_opts, "iTunesMetadata", meta, NULL);
 			}
 		}
-		zip_unchange_all(zf);
-		zip_close(zf);
+		if (zf) {
+			zip_unchange_all(zf);
+			zip_close(zf);
+		}
 
 		/* perform installation or upgrade */
 		if (install_mode) {
