@@ -858,12 +858,20 @@ run_again:
 			}
 
 			char *bundleexecutable = NULL;
+			char *bundleidentifier = NULL;
 
 			plist_t bname = plist_dict_get_item(info, "CFBundleExecutable");
 			if (bname) {
 				plist_get_string_val(bname, &bundleexecutable);
 			}
+
+			bname = plist_dict_get_item(info, "CFBundleIdentifier");
+			if (bname) {
+				plist_get_string_val(bname, &bundleidentifier);
+				printf("Installing bundle %s.\n", bundleidentifier);
+			}
 			plist_free(info);
+			info = NULL;
 
 			if (!bundleexecutable) {
 				fprintf(stderr, "Could not determine value for CFBundleExecutable!\n");
@@ -892,7 +900,7 @@ run_again:
 
 			/* copy archive to device */
 			pkgname = NULL;
-			if (asprintf(&pkgname, "%s/%s", PKG_PATH, basename(appid)) < 0) {
+			if (asprintf(&pkgname, "%s/%s", PKG_PATH, bundleidentifier) < 0) {
 				fprintf(stderr, "Out of memory!?\n");
 				goto leave_cleanup;
 			}
@@ -906,6 +914,9 @@ run_again:
 
 			printf("done.\n");
 
+			if (bundleidentifier) {
+				instproxy_client_options_add(client_opts, "CFBundleIdentifier", bundleidentifier, NULL);
+			}
 			if (sinf) {
 				instproxy_client_options_add(client_opts, "ApplicationSINF", sinf, NULL);
 			}
