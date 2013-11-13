@@ -2,11 +2,11 @@ About
 =====
 
 ideviceinstaller is a tool to interact with the installation_proxy 
-of an iDevice allowing to install, upgrade, uninstall, archive, restore,
+of an iOS device allowing to install, upgrade, uninstall, archive, restore,
 and enumerate installed or archived apps.
 
-It makes use of the libimobiledevice library that allows communication
-with the devices.
+It makes use of the fabulous libimobiledevice library that allows communication
+with iOS devices.
 
 Requirements
 ============
@@ -24,12 +24,6 @@ To compile run:
 	make
 	sudo make install
 
-Notes
-=====
-
-There is a known bug in libimobiledevice which causes transfers of large apps 
-to/from the device to abort due to a timeout.
-
 Who/What/Where?
 ===============
 
@@ -37,10 +31,13 @@ Home:
 	http://www.libimobiledevice.org/
 
 Code:
-	git clone git://git.sukimashita.com/ideviceinstaller.git
+	git clone http://git.sukimashita.com/ideviceinstaller.git
+
+Code (Mirror):
+	git clone https://github.com/libimobiledevice/ideviceinstaller.git
 
 Tickets:
-	http://libiphone.lighthouseapp.com/
+	http://github.com/libimobiledevice/ideviceinstaller/issues
 
 Mailing List:
 	http://lists.libimobiledevice.org/mailman/listinfo/libimobiledevice-devel
@@ -50,7 +47,7 @@ Credits
 
 Apple, iPhone, iPod, and iPod Touch are trademarks of Apple Inc.
 libimobiledevice is an independent software library and has not been
-authorized, sponsored, or otherwise approved by Apple Inc.
+authorized, sponsored or otherwise approved by Apple Inc.
 
 README Updated on:
-	2011-03-19
+	2013-11-12
