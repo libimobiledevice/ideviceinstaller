@@ -145,7 +145,6 @@ static int zip_get_contents(struct zip *zf, const char *filename, int locate_fla
 	*len = 0;
 
 	if (zindex < 0) {
-		fprintf(stderr, "ERROR: could not locate %s in archive!\n", filename);
 		return -1;
 	}
 
@@ -816,6 +815,8 @@ run_again:
 				} else {
 					plist_from_xml(zbuf, len, &meta_dict);
 				}
+			} else {
+				fprintf(stderr, "WARNING: could not locate %s in archive!\n", ITUNES_METADATA_PLIST_FILENAME);
 			}
 			if (zbuf) {
 				free(zbuf);
@@ -841,6 +842,7 @@ run_again:
 			strcat(filename, "Info.plist");
 
 			if (zip_get_contents(zf, filename, 0, &zbuf, &len) < 0) {
+				fprintf(stderr, "WARNING: could not locate %s in archive!\n", filename);
 				zip_unchange_all(zf);
 				zip_close(zf);
 				goto leave_cleanup;
@@ -894,6 +896,8 @@ run_again:
 			len = 0;
 			if (zip_get_contents(zf, sinfname, 0, &zbuf, &len) == 0) {
 				sinf = plist_new_data(zbuf, len);
+			} else {
+				fprintf(stderr, "WARNING: could not locate %s in archive!\n", sinfname);
 			}
 			free(sinfname);
 			if (zbuf) {
