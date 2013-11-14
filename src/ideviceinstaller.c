@@ -234,7 +234,7 @@ static int zip_get_app_directory(struct zip* zf, char** path)
 	return 0;
 }
 
-static void do_wait_when_needed()
+static void idevice_wait_for_operation_to_complete()
 {
 	int i = 0;
 	struct timespec ts;
@@ -1146,7 +1146,7 @@ run_again:
 			notification_expected = 1;
 		}
 
-		do_wait_when_needed();
+		idevice_wait_for_operation_to_complete();
 
 		if (copy_path) {
 			if (err_occured) {
@@ -1298,7 +1298,7 @@ run_again:
 		client = NULL;
 	}
 
-	do_wait_when_needed();
+	idevice_wait_for_operation_to_complete();
 
   leave_cleanup:
 	if (np) {
