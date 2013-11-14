@@ -107,13 +107,13 @@ static void status_cb(const char *operation, plist_t status)
 		}
 		if (!nerror) {
 			if (last_status && (strcmp(last_status, status_msg))) {
-				printf("\n");
+				printf("\r");
 			}
 
 			if (!npercent) {
 				printf("%s - %s\n", operation, status_msg);
 			} else {
-				printf("%s - %s (%d%%)\r", operation, status_msg, percent);
+				printf("%s - %s (%d%%)\n", operation, status_msg, percent);
 			}
 		} else {
 			char *err_msg = NULL;
