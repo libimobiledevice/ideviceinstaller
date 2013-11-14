@@ -723,7 +723,7 @@ run_again:
 				afc_make_directory(afc, pkgname);
 			}
 
-			printf("Uploading %s package contents...\n", basename(ipcc));
+			printf("Uploading %s package contents... ", basename(ipcc));
 
 			/* extract the contents of the .ipcc file to PublicStaging/<name>.ipcc directory */
 			zip_uint64_t numzf = zip_get_num_entries(zf, 0);
@@ -801,7 +801,7 @@ run_again:
 				}
 			}
 			free(ipcc);
-			printf("done.\n");
+			printf("DONE.\n");
 
 			instproxy_client_options_add(client_opts, "PackageType", "CarrierBundle", NULL);
 		} else if (S_ISDIR(fst.st_mode)) {
@@ -810,8 +810,9 @@ run_again:
 
 			asprintf(&pkgname, "%s/%s", PKG_PATH, basename(appid));
 
-			printf("Uploading %s package contents...\n", basename(appid));
+			printf("Uploading %s package contents... ", basename(appid));
 			afc_upload_dir(afc, appid, pkgname);
+			printf("DONE.\n");
 		} else {
 			zf = zip_open(appid, 0, &errp);
 			if (!zf) {
@@ -886,7 +887,6 @@ run_again:
 			bname = plist_dict_get_item(info, "CFBundleIdentifier");
 			if (bname) {
 				plist_get_string_val(bname, &bundleidentifier);
-				printf("Installing bundle %s.\n", bundleidentifier);
 			}
 			plist_free(info);
 			info = NULL;
@@ -925,14 +925,14 @@ run_again:
 				goto leave_cleanup;
 			}
 
-			printf("Copying '%s' --> '%s'\n", appid, pkgname);
+			printf("Copying '%s' to device... ", appid);
 
 			if (afc_upload_file(afc, appid, pkgname) < 0) {
 				free(pkgname);
 				goto leave_cleanup;
 			}
 
-			printf("done.\n");
+			printf("DONE.\n");
 
 			if (bundleidentifier) {
 				instproxy_client_options_add(client_opts, "CFBundleIdentifier", bundleidentifier, NULL);
@@ -951,14 +951,14 @@ run_again:
 
 		/* perform installation or upgrade */
 		if (install_mode) {
-			printf("Installing '%s'\n", pkgname);
+			printf("Installing '%s'\n", bundleidentifier);
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 			instproxy_install(ipc, pkgname, client_opts, status_cb, NULL);
 #else
 			instproxy_install(ipc, pkgname, client_opts, status_cb);
 #endif
 		} else {
-			printf("Upgrading '%s'\n", pkgname);
+			printf("Upgrading '%s'\n", bundleidentifier);
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 			instproxy_upgrade(ipc, pkgname, client_opts, status_cb, NULL);
 #else
@@ -970,6 +970,7 @@ run_again:
 		wait_for_op_complete = 1;
 		notification_expected = 1;
 	} else if (uninstall_mode) {
+		printf("Uninstalling '%s'\n", appid);
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 		instproxy_uninstall(ipc, appid, NULL, status_cb, NULL);
 #else
@@ -1233,7 +1234,7 @@ run_again:
 			}
 
 			/* copy file over */
-			printf("Copying '%s' --> '%s'\n", remotefile, localfile);
+			printf("Copying '%s' --> '%s'... ", remotefile, localfile);
 			free(remotefile);
 			free(localfile);
 
@@ -1260,7 +1261,8 @@ run_again:
 			afc_file_close(afc, af);
 			fclose(f);
 
-			printf("done.\n");
+			printf("DONE.\n");
+
 			if (total != fsize) {
 				fprintf(stderr, "WARNING: remote and local file sizes don't match (%d != %d)\n", fsize, total);
 				if (remove_after_copy) {
