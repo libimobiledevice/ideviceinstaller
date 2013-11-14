@@ -493,6 +493,7 @@ int main(int argc, char **argv)
 	uint16_t service = 0;
 #endif
 	int res = 0;
+	char *bundleidentifier = NULL;
 
 	parse_opts(argc, argv);
 
@@ -876,7 +877,6 @@ run_again:
 			}
 
 			char *bundleexecutable = NULL;
-			char *bundleidentifier = NULL;
 
 			plist_t bname = plist_dict_get_item(info, "CFBundleExecutable");
 			if (bname) {
@@ -1314,7 +1314,10 @@ run_again:
 
 	idevice_wait_for_operation_to_complete();
 
-  leave_cleanup:
+leave_cleanup:
+	if (bundleidentifier) {
+		free(bundleidentifier);
+	}
 	if (np) {
 		np_client_free(np);
 	}
