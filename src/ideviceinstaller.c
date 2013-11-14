@@ -68,6 +68,7 @@ int remove_archive_mode = 0;
 char *last_status = NULL;
 int wait_for_op_complete = 0;
 int notification_expected = 0;
+int is_device_connected = 0;
 int op_completed = 0;
 int err_occured = 0;
 int notified = 0;
@@ -234,25 +235,38 @@ static int zip_get_app_directory(struct zip* zf, char** path)
 	return 0;
 }
 
+static void idevice_event_callback(const idevice_event_t* event, void* userdata)
+{
+	if (event->event == IDEVICE_DEVICE_REMOVE) {
+		is_device_connected = 0;
+	}
+}
+
 static void idevice_wait_for_operation_to_complete()
 {
 	int i = 0;
 	struct timespec ts;
 	ts.tv_sec = 0;
 	ts.tv_nsec = 500000000;
+	is_device_connected = 1;
+
+	/* subscribe to make sure to exit on device removal */
+	idevice_event_subscribe(idevice_event_callback, NULL);
 
 	/* wait for operation to complete */
 	while (wait_for_op_complete && !op_completed && !err_occured
-		   && !notified && (i < 60)) {
+		   && !notified && (i < 60) && is_device_connected) {
 		nanosleep(&ts, NULL);
 		i++;
 	}
 
 	/* wait some time if a notification is expected */
-	while (notification_expected && !notified && !err_occured && (i < 10)) {
+	while (notification_expected && !notified && !err_occured && (i < 10) && is_device_connected) {
 		nanosleep(&ts, NULL);
 		i++;
 	}
+
+	idevice_event_unsubscribe();
 }
 
 static void print_usage(int argc, char **argv)
