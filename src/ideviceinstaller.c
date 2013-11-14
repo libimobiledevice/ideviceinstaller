@@ -977,7 +977,7 @@ run_again:
 		instproxy_uninstall(ipc, appid, NULL, status_cb);
 #endif
 		wait_for_op_complete = 1;
-		notification_expected = 1;
+		notification_expected = 0;
 	} else if (list_archives_mode) {
 		int xml_mode = 0;
 		plist_t dict = NULL;
