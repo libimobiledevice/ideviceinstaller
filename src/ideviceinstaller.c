@@ -244,7 +244,6 @@ static void idevice_event_callback(const idevice_event_t* event, void* userdata)
 
 static void idevice_wait_for_operation_to_complete()
 {
-	int i = 0;
 	struct timespec ts;
 	ts.tv_sec = 0;
 	ts.tv_nsec = 500000000;
@@ -255,15 +254,13 @@ static void idevice_wait_for_operation_to_complete()
 
 	/* wait for operation to complete */
 	while (wait_for_op_complete && !op_completed && !err_occured
-		   && !notified && (i < 60) && is_device_connected) {
+		   && !notified && is_device_connected) {
 		nanosleep(&ts, NULL);
-		i++;
 	}
 
 	/* wait some time if a notification is expected */
-	while (notification_expected && !notified && !err_occured && (i < 10) && is_device_connected) {
+	while (notification_expected && !notified && !err_occured && is_device_connected) {
 		nanosleep(&ts, NULL);
-		i++;
 	}
 
 	idevice_event_unsubscribe();
