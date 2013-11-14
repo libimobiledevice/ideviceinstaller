@@ -47,6 +47,8 @@
 
 #include <zip.h>
 
+#define ITUNES_METADATA_PLIST_FILENAME "iTunesMetadata.plist"
+
 const char PKG_PATH[] = "PublicStaging";
 const char APPARCH_PATH[] = "ApplicationArchives";
 
@@ -807,7 +809,7 @@ run_again:
 			char *zbuf = NULL;
 			uint32_t len = 0;
 			plist_t meta_dict = NULL;
-			if (zip_get_contents(zf, "iTunesMetadata.plist", 0, &zbuf, &len) == 0) {
+			if (zip_get_contents(zf, ITUNES_METADATA_PLIST_FILENAME, 0, &zbuf, &len) == 0) {
 				meta = plist_new_data(zbuf, len);
 				if (memcmp(zbuf, "bplist00", 8) == 0) {
 					plist_from_bin(zbuf, len, &meta_dict);
