@@ -271,6 +271,31 @@ static void idevice_wait_for_operation_to_complete()
 	idevice_event_unsubscribe();
 }
 
+static int str_is_udid(const char* str)
+{
+	const char allowed[] = "0123456789abcdefABCDEF";
+
+	/* handle NULL case */
+	if (str == NULL)
+		return -1;
+
+	int length = strlen(str);
+
+	/* verify length */
+	if (length != 40)
+		return -1;
+
+	/* check for invalid characters */
+	while(length--) {
+		/* invalid character in udid? */
+		if (strchr(allowed, str[length]) == NULL) {
+			return -1;
+		}
+	} 
+
+	return 0;
+}
+
 static void print_usage(int argc, char **argv)
 {
 	char *name = NULL;
@@ -279,7 +304,7 @@ static void print_usage(int argc, char **argv)
 	printf("Usage: %s OPTIONS\n", (name ? name + 1 : argv[0]));
 	printf("Manage apps on an iDevice.\n\n");
 	printf
-		("  -U, --udid UDID\tTarget specific device by its 40-digit device UDID.\n"
+		("  -u, --udid UDID\tTarget specific device by its 40-digit device UDID.\n"
 		 "  -l, --list-apps\tList apps, possible options:\n"
 		 "       -o list_user\t- list user apps only (this is the default)\n"
 		 "       -o list_system\t- list system apps only\n"
@@ -287,7 +312,7 @@ static void print_usage(int argc, char **argv)
 		 "       -o xml\t\t- print full output as xml plist\n"
 		 "  -i, --install ARCHIVE\tInstall app from package file specified by ARCHIVE.\n"
 		 "                       \tARCHIVE can also be a .ipcc file for carrier bundles.\n"
-		 "  -u, --uninstall APPID\tUninstall app specified by APPID.\n"
+		 "  -U, --uninstall APPID\tUninstall app specified by APPID.\n"
 		 "  -g, --upgrade ARCHIVE\tUpgrade app from package file specified by ARCHIVE.\n"
 		 "  -L, --list-archives\tList archived applications, possible options:\n"
 		 "       -o xml\t\t- print full output as xml plist\n"
@@ -308,10 +333,10 @@ static void parse_opts(int argc, char **argv)
 {
 	static struct option longopts[] = {
 		{"help", 0, NULL, 'h'},
-		{"udid", 1, NULL, 'U'},
+		{"udid", 1, NULL, 'u'},
 		{"list-apps", 0, NULL, 'l'},
 		{"install", 1, NULL, 'i'},
-		{"uninstall", 1, NULL, 'u'},
+		{"uninstall", 1, NULL, 'U'},
 		{"upgrade", 1, NULL, 'g'},
 		{"list-archives", 0, NULL, 'L'},
 		{"archive", 1, NULL, 'a'},
@@ -353,14 +378,20 @@ static void parse_opts(int argc, char **argv)
 		case 'h':
 			print_usage(argc, argv);
 			exit(0);
-		case 'U':
-			if (strlen(optarg) != 40) {
-				printf("%s: invalid UDID specified (length != 40)\n",
-					   argv[0]);
+		case 'u':
+			if (str_is_udid(optarg) == 0) {
+				udid = strdup(optarg);
+				break;
+			}
+			if (strchr(optarg, '.') != NULL) {
+				fprintf(stderr, "WARNING: Using \"-u\" for \"--uninstall\" is deprecated. Please use \"-U\" instead.\n");
+				cmd = CMD_UNINSTALL;
+				appid = strdup(optarg);
+			} else {
+				printf("ERROR: Invalid UDID specified\n");
 				print_usage(argc, argv);
 				exit(2);
 			}
-			udid = strdup(optarg);
 			break;
 		case 'l':
 			cmd = CMD_LIST_APPS;
@@ -369,6 +400,12 @@ static void parse_opts(int argc, char **argv)
 			cmd = CMD_INSTALL;
 			appid = strdup(optarg);
 			break;
+		case 'U':
+			if (str_is_udid(optarg) == 0) {
+				fprintf(stderr, "WARNING: Using \"-U\" for \"--udid\" is deprecated. Please use \"-u\" instead.\n");
+				udid = strdup(optarg);
+				break;
+			}
 			cmd = CMD_UNINSTALL;
 			appid = strdup(optarg);
 			break;
