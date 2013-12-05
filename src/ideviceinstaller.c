@@ -805,7 +805,10 @@ run_again:
 			/* upload developer app directory */
 			instproxy_client_options_add(client_opts, "PackageType", "Developer", NULL);
 
-			asprintf(&pkgname, "%s/%s", PKG_PATH, basename(appid));
+			if (asprintf(&pkgname, "%s/%s", PKG_PATH, basename(appid)) < 0) {
+				fprintf(stderr, "ERROR: Out of memory allocating pkgname!?\n");
+				goto leave_cleanup;
+			}
 
 			printf("Uploading %s package contents... ", basename(appid));
 			afc_upload_dir(afc, appid, pkgname);
