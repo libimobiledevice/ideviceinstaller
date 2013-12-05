@@ -412,7 +412,11 @@ static void parse_opts(int argc, char **argv)
 		}
 	}
 
-	if (optind <= 1 || (argc - optind > 0)) {
+	if (cmd == CMD_NONE) {
+		printf("ERROR: No mode/operation was supplied.\n");
+	}
+
+	if (cmd == CMD_NONE || optind <= 1 || (argc - optind > 0)) {
 		print_usage(argc, argv);
 		exit(2);
 	}
