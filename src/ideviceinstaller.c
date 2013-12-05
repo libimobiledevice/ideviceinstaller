@@ -498,7 +498,7 @@ int main(int argc, char **argv)
 	argv += optind;
 
 	if (IDEVICE_E_SUCCESS != idevice_new(&phone, udid)) {
-		fprintf(stderr, "No iPhone found, is it plugged in?\n");
+		fprintf(stderr, "No iOS device found, is it plugged in?\n");
 		return -1;
 	}
 
