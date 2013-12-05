@@ -330,6 +330,25 @@ static void parse_opts(int argc, char **argv)
 			break;
 		}
 
+		/* verify if multiple modes have been supplied */
+		switch (c) {
+		case 'l':
+		case 'i':
+		case 'g':
+		case 'L':
+		case 'a':
+		case 'r':
+		case 'R':
+			if (cmd != CMD_NONE) {
+				printf("ERROR: A mode has already been supplied. Multiple modes are not supported.\n");
+				print_usage(argc, argv);
+				exit(2);
+			}
+			break;
+		default:
+			break;
+		}
+
 		switch (c) {
 		case 'h':
 			print_usage(argc, argv);
