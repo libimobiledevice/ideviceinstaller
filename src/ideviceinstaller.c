@@ -56,14 +56,19 @@ char *udid = NULL;
 char *options = NULL;
 char *appid = NULL;
 
-int list_apps_mode = 0;
-int install_mode = 0;
-int uninstall_mode = 0;
-int upgrade_mode = 0;
-int list_archives_mode = 0;
-int archive_mode = 0;
-int restore_mode = 0;
-int remove_archive_mode = 0;
+enum cmd_mode {
+	CMD_NONE = 0,
+	CMD_LIST_APPS,
+	CMD_INSTALL,
+	CMD_UNINSTALL,
+	CMD_UPGRADE,
+	CMD_LIST_ARCHIVES,
+	CMD_ARCHIVE,
+	CMD_RESTORE,
+	CMD_REMOVE_ARCHIVE
+};
+
+int cmd = CMD_NONE;
 
 char *last_status = NULL;
 int wait_for_op_complete = 0;
@@ -339,33 +344,32 @@ static void parse_opts(int argc, char **argv)
 			udid = strdup(optarg);
 			break;
 		case 'l':
-			list_apps_mode = 1;
+			cmd = CMD_LIST_APPS;
 			break;
 		case 'i':
-			install_mode = 1;
+			cmd = CMD_INSTALL;
 			appid = strdup(optarg);
 			break;
-		case 'u':
-			uninstall_mode = 1;
+			cmd = CMD_UNINSTALL;
 			appid = strdup(optarg);
 			break;
 		case 'g':
-			upgrade_mode = 1;
+			cmd = CMD_UPGRADE;
 			appid = strdup(optarg);
 			break;
 		case 'L':
-			list_archives_mode = 1;
+			cmd = CMD_LIST_ARCHIVES;
 			break;
 		case 'a':
-			archive_mode = 1;
+			cmd = CMD_ARCHIVE;
 			appid = strdup(optarg);
 			break;
 		case 'r':
-			restore_mode = 1;
+			cmd = CMD_RESTORE;
 			appid = strdup(optarg);
 			break;
 		case 'R':
-			remove_archive_mode = 1;
+			cmd = CMD_REMOVE_ARCHIVE;
 			appid = strdup(optarg);
 			break;
 		case 'o':
@@ -559,7 +563,7 @@ run_again:
 	}
 	notification_expected = 0;
 
-	if (list_apps_mode) {
+	if (cmd == CMD_LIST_APPS) {
 		int xml_mode = 0;
 		plist_t client_opts = instproxy_client_options_new();
 		instproxy_client_options_add(client_opts, "ApplicationType", "User", NULL);
@@ -652,7 +656,7 @@ run_again:
 			free(s_appid);
 		}
 		plist_free(apps);
-	} else if (install_mode || upgrade_mode) {
+	} else if (cmd == CMD_INSTALL || cmd == CMD_UPGRADE) {
 		plist_t sinf = NULL;
 		plist_t meta = NULL;
 		char *pkgname = NULL;
@@ -950,7 +954,7 @@ run_again:
 		}
 
 		/* perform installation or upgrade */
-		if (install_mode) {
+		if (cmd == CMD_INSTALL) {
 			printf("Installing '%s'\n", bundleidentifier);
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 			instproxy_install(ipc, pkgname, client_opts, status_cb, NULL);
@@ -969,7 +973,7 @@ run_again:
 		free(pkgname);
 		wait_for_op_complete = 1;
 		notification_expected = 1;
-	} else if (uninstall_mode) {
+	} else if (cmd == CMD_UNINSTALL) {
 		printf("Uninstalling '%s'\n", appid);
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 		instproxy_uninstall(ipc, appid, NULL, status_cb, NULL);
@@ -978,7 +982,7 @@ run_again:
 #endif
 		wait_for_op_complete = 1;
 		notification_expected = 0;
-	} else if (list_archives_mode) {
+	} else if (cmd == CMD_LIST_ARCHIVES) {
 		int xml_mode = 0;
 		plist_t dict = NULL;
 		plist_t lres = NULL;
@@ -1069,7 +1073,7 @@ run_again:
 		}
 		while (node);
 		plist_free(dict);
-	} else if (archive_mode) {
+	} else if (cmd == CMD_ARCHIVE) {
 		char *copy_path = NULL;
 		int remove_after_copy = 0;
 		int skip_uninstall = 1;
@@ -1274,8 +1278,7 @@ run_again:
 			if (remove_after_copy) {
 				/* remove archive if requested */
 				printf("Removing '%s'\n", appid);
-				archive_mode = 0;
-				remove_archive_mode = 1;
+				cmd = CMD_REMOVE_ARCHIVE;
 				free(options);
 				options = NULL;
 				if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(phone, &client, "ideviceinstaller")) {
@@ -1286,7 +1289,7 @@ run_again:
 			}
 		}
 		goto leave_cleanup;
-	} else if (restore_mode) {
+	} else if (cmd == CMD_RESTORE) {
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 		instproxy_restore(ipc, appid, NULL, status_cb, NULL);
 #else
@@ -1294,7 +1297,7 @@ run_again:
 #endif
 		wait_for_op_complete = 1;
 		notification_expected = 1;
-	} else if (remove_archive_mode) {
+	} else if (cmd == CMD_REMOVE_ARCHIVE) {
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 		instproxy_remove_archive(ipc, appid, NULL, status_cb, NULL);
 #else
