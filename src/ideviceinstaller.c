@@ -47,6 +47,13 @@
 
 #include <zip.h>
 
+#ifndef ZIP_CODEC_ENCODE
+// this is required for old libzip...
+#define zip_get_num_entries(x, y) zip_get_num_files(x)
+#define zip_int64_t ssize_t
+#define zip_uint64_t off_t
+#endif
+
 #define ITUNES_METADATA_PLIST_FILENAME "iTunesMetadata.plist"
 
 const char PKG_PATH[] = "PublicStaging";
