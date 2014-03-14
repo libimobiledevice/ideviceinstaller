@@ -470,7 +470,7 @@ static int afc_upload_file(afc_client_t afc, const char* filename, const char* d
 {
 	FILE *f = NULL;
 	uint64_t af = 0;
-	char buf[8192];
+	char buf[1048576];
 
 	f = fopen(filename, "rb");
 	if (!f) {
