@@ -491,8 +491,9 @@ static int afc_upload_file(afc_client_t afc, const char* filename, const char* d
 			uint32_t written, total = 0;
 			while (total < amount) {
 				written = 0;
-				if (afc_file_write(afc, af, buf, amount, &written) != AFC_E_SUCCESS) {
-					fprintf(stderr, "AFC Write error!\n");
+				afc_error_t aerr = afc_file_write(afc, af, buf, amount, &written);
+				if (aerr != AFC_E_SUCCESS) {
+					fprintf(stderr, "AFC Write error: %d\n", aerr);
 					break;
 				}
 				total += written;
