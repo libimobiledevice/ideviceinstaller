@@ -676,6 +676,7 @@ run_again:
 				}
 				elem = strtok(NULL, ",");
 			}
+			free(opts);
 		}
 
 		err = instproxy_browse(ipc, client_opts, &apps);
