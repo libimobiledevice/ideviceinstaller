@@ -554,6 +554,7 @@ int main(int argc, char **argv)
 	idevice_t phone = NULL;
 	lockdownd_client_t client = NULL;
 	instproxy_client_t ipc = NULL;
+	instproxy_error_t err;
 	np_client_t np = NULL;
 	afc_client_t afc = NULL;
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
@@ -587,7 +588,16 @@ int main(int argc, char **argv)
 		goto leave_cleanup;
 	}
 
-	if (np_client_new(phone, service, &np) != NP_E_SUCCESS) {
+	np_error_t nperr = np_client_new(phone, service, &np);
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
+	if (service) {
+		lockdownd_service_descriptor_free(service);
+	}
+	service = NULL;
+#else
+	service = 0;
+#endif
+	if (nperr != NP_E_SUCCESS) {
 		fprintf(stderr, "Could not connect to notification_proxy!\n");
 		goto leave_cleanup;
 	}
@@ -618,7 +628,16 @@ run_again:
 		goto leave_cleanup;
 	}
 
-	if (instproxy_client_new(phone, service, &ipc) != INSTPROXY_E_SUCCESS) {
+	err = instproxy_client_new(phone, service, &ipc);
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
+	if (service) {
+		lockdownd_service_descriptor_free(service);
+	}
+	service = NULL;
+#else
+	service = 0;
+#endif
+	if (err != INSTPROXY_E_SUCCESS) {
 		fprintf(stderr, "Could not connect to installation_proxy!\n");
 		goto leave_cleanup;
 	}
@@ -635,7 +654,6 @@ run_again:
 		int xml_mode = 0;
 		plist_t client_opts = instproxy_client_options_new();
 		instproxy_client_options_add(client_opts, "ApplicationType", "User", NULL);
-		instproxy_error_t err;
 		plist_t apps = NULL;
 
 		/* look for options */
@@ -1056,7 +1074,6 @@ run_again:
 		int xml_mode = 0;
 		plist_t dict = NULL;
 		plist_t lres = NULL;
-		instproxy_error_t err;
 
 		/* look for options */
 		if (options) {
