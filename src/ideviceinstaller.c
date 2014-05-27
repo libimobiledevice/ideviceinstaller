@@ -36,6 +36,9 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
@@ -537,6 +540,14 @@ static void afc_upload_dir(afc_client_t afc, const char* path, const char* afcpa
 			strcat(apath, "/");
 			strcat(apath, ep->d_name);
 
+#ifdef HAVE_LSTAT
+			if ((lstat(fpath, &st) == 0) && S_ISLNK(st.st_mode)) {
+				char *target = (char *)malloc(st.st_size);
+				readlink(fpath, target, st.st_size);
+				afc_make_link(afc, AFC_SYMLINK, target, fpath);
+				free(target);
+			} else
+#endif
 			if ((stat(fpath, &st) == 0) && S_ISDIR(st.st_mode)) {
 				afc_upload_dir(afc, fpath, apath);
 			} else {

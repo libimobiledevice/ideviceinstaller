@@ -52,6 +52,25 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([strcasecmp strdup strerror strndup])
 
+# Check for lstat
+
+AC_MSG_CHECKING([whether lstat is available])
+AC_TRY_LINK([
+#include <sys/types.h>
+#include <sys/stat.h>
+#if defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
+],[
+struct stat st;
+lstat("/tmp", &st);
+], [have_lstat="yes"], [have_lstat="no"])
+AC_MSG_RESULT([${have_lstat}])
+
+if test "x${have_lstat}" = "xyes" ; then
+  AC_DEFINE([HAVE_LSTAT], 1, [Define if lstat syscall is supported])
+fi
+
 AS_COMPILER_FLAGS(GLOBAL_CFLAGS, "-Wall -Wextra -Wmissing-declarations -Wredundant-decls -Wshadow -Wpointer-arith  -Wwrite-strings -Wswitch-default -Wno-unused-parameter -Werror -g")
 AC_SUBST(GLOBAL_CFLAGS)
 
