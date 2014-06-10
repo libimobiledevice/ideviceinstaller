@@ -134,7 +134,7 @@ static void status_cb(const char *operation, plist_t status)
 		} else {
 			char *err_msg = NULL;
 			plist_get_string_val(nerror, &err_msg);
-			printf("%s - Error occured: %s\n", operation, err_msg);
+			printf("%s - Error occurred: %s\n", operation, err_msg);
 			free(err_msg);
 			err_occured = 1;
 		}
@@ -1445,6 +1445,10 @@ leave_cleanup:
 	if (options) {
 		free(options);
 	}
+	
+	if (err_occured && !res) {
+                res = 128;
+        }
 
 	return res;
 }
