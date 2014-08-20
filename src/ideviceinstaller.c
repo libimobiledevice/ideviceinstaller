@@ -85,7 +85,7 @@ int wait_for_op_complete = 0;
 int notification_expected = 0;
 int is_device_connected = 0;
 int op_completed = 0;
-int err_occured = 0;
+int err_occurred = 0;
 int notified = 0;
 
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
@@ -134,9 +134,9 @@ static void status_cb(const char *operation, plist_t status)
 		} else {
 			char *err_msg = NULL;
 			plist_get_string_val(nerror, &err_msg);
-			printf("%s - Error occured: %s\n", operation, err_msg);
+			printf("%s - Error occurred: %s\n", operation, err_msg);
 			free(err_msg);
-			err_occured = 1;
+			err_occurred = 1;
 		}
 		if (last_status) {
 			free(last_status);
@@ -268,13 +268,13 @@ static void idevice_wait_for_operation_to_complete()
 	idevice_event_subscribe(idevice_event_callback, NULL);
 
 	/* wait for operation to complete */
-	while (wait_for_op_complete && !op_completed && !err_occured
+	while (wait_for_op_complete && !op_completed && !err_occurred
 		   && !notified && is_device_connected) {
 		nanosleep(&ts, NULL);
 	}
 
 	/* wait some time if a notification is expected */
-	while (notification_expected && !notified && !err_occured && is_device_connected) {
+	while (notification_expected && !notified && !err_occurred && is_device_connected) {
 		nanosleep(&ts, NULL);
 	}
 
@@ -1271,7 +1271,7 @@ run_again:
 		idevice_wait_for_operation_to_complete();
 
 		if (copy_path) {
-			if (err_occured) {
+			if (err_occurred) {
 				afc_client_free(afc);
 				afc = NULL;
 				goto leave_cleanup;
