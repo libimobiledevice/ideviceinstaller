@@ -1449,6 +1449,10 @@ leave_cleanup:
 	if (options) {
 		free(options);
 	}
+	
+	if (err_occured && !res) {
+                res = 128;
+        }
 
 	if (err_occurred && !res) {
 		res = 128;
