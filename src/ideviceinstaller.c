@@ -542,9 +542,13 @@ static void afc_upload_dir(afc_client_t afc, const char* path, const char* afcpa
 
 #ifdef HAVE_LSTAT
 			if ((lstat(fpath, &st) == 0) && S_ISLNK(st.st_mode)) {
-				char *target = (char *)malloc(st.st_size);
-				readlink(fpath, target, st.st_size);
-				afc_make_link(afc, AFC_SYMLINK, target, fpath);
+				char *target = (char *)malloc(st.st_size+1);
+				if (readlink(fpath, target, st.st_size+1) < 0) {
+					fprintf(stderr, "ERROR: readlink: %s (%d)\n", strerror(errno), errno);
+				} else {
+					target[st.st_size] = '\0';
+					afc_make_link(afc, AFC_SYMLINK, target, fpath);
+				}
 				free(target);
 			} else
 #endif
