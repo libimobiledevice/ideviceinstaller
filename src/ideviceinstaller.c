@@ -1450,5 +1450,9 @@ leave_cleanup:
 		free(options);
 	}
 
+	if (err_occurred && !res) {
+		res = 128;
+	}
+
 	return res;
 }
