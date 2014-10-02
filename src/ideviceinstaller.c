@@ -241,12 +241,6 @@ static int zip_get_app_directory(struct zip* zf, char** path)
 		}
 	} while(i < c);
 
-	/* check if the path actually exists */
-	int zindex = zip_name_locate(zf, *path, 0);
-	if (zindex < 0) {
-		return -1;
-	}
-
 	return 0;
 }
 
