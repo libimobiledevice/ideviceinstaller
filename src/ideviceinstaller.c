@@ -777,7 +777,7 @@ run_again:
 		lockdownd_client_free(client);
 		client = NULL;
 
-		if (afc_client_new(phone, service, &afc) != INSTPROXY_E_SUCCESS) {
+		if (afc_client_new(phone, service, &afc) != AFC_E_SUCCESS) {
 			fprintf(stderr, "Could not connect to AFC!\n");
 			goto leave_cleanup;
 		}
@@ -1243,7 +1243,7 @@ run_again:
 			lockdownd_client_free(client);
 			client = NULL;
 
-			if (afc_client_new(phone, service, &afc) != INSTPROXY_E_SUCCESS) {
+			if (afc_client_new(phone, service, &afc) != AFC_E_SUCCESS) {
 				fprintf(stderr, "Could not connect to AFC!\n");
 				goto leave_cleanup;
 			}
