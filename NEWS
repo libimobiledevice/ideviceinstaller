@@ -1,3 +1,37 @@
+Version 1.1.0
+~~~~~~~~~~~~~
+
+* Changes:
+  - Fix installation of archives which are missing app directory zip file entry
+  - Return non-zero exit status (128) when device error occurs
+  - Add error checking for readlink use
+  - Add support for installing from directories which contain symlinks
+  - Plug a few memory leaks
+  - Print AFC error code if writing fails
+  - Fix possible buffer overflow with filename argument
+  - Increase transfer buffer size for faster file uploads
+  - Fix building with older libzip versions
+  - Swap "-u" and "-U" arguments and print deprecation warning if still used
+  - Improve error reporting on wrong usage
+  - Replace "iPhone" wording with more general term "iOS device"
+  - Remove waiting timeouts as they appear unreliable with large archives
+  - Don't wait for a notification during uninstall as there is none sometimes
+  - Improve command line output for more clarity and unification
+  - Detect device removal and abort operation in that case
+  - Turn some errors messages into warnings to not confuse users
+  - Support iOS 7 correctly by passing "CFBundleIdentifier" option
+  - Allow installation of developer apps by passing a ".app" directory
+  - Add compatibility for libimobiledevice >= 1.1.5
+  - Fix file operations for WIN32
+  - Fix wrong usage description for upgrade command
+  - Use CFBundleExecutable instead of CFBundleName to construct executable path
+  - Rename "uuid" to correct "udid" abbreviation as used in other tools
+  - Fix various issues with ZIP index and locating files in the archive
+  - Improve detection of Info.plist in application archives
+  - Fix compiler warnings
+  - Allow creating app archives with just the documents/user data
+  - Add support for CarrierBundle installation (.ipcc files)
+
 Version 1.0.1
 ~~~~~~~~~~~~~
 
