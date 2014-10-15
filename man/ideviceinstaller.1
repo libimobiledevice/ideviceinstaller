@@ -1,14 +1,14 @@
 .TH "ideviceinstaller" 1
 .SH NAME
-ideviceinstaller \- Manage iDevice apps
+ideviceinstaller \- Manage apps on iOS devices.
 .SH SYNOPSIS
 .B ideviceinstaller
 [OPTIONS]
 
 .SH DESCRIPTION
 
-Allows to install, upgrade, uninstall, archive, restore and
-enumerate installed or archived apps on iDevices.
+Allows to install, upgrade, uninstall, archive, restore and enumerate installed
+or archived apps on iOS devices.
 
 .SH OPTIONS
 
@@ -17,8 +17,8 @@ enumerate installed or archived apps on iDevices.
 .B \-d, \-\-debug
 enable communication debugging.
 .TP
-.B \-u, \-\-uuid UUID
-target specific device by its 40-digit device UUID.
+.B \-u, \-\-udid UDID
+target specific device by its 40-digit device UDID.
 .TP
 .B \-h, \-\-help
 prints usage information
@@ -47,7 +47,9 @@ print output in xml format (PList)
 
 .TP
 .B \-i, \-\-install ARCHIVE
-install app from a package file specified by ARCHIVE.
+install app from a package file specified by ARCHIVE. ARCHIVE can also be a
+.ipcc file for carrier bundle installation or a .app directory for developer
+app installation.
 
 .TP
 .B \-U, \-\-uninstall APPID
@@ -84,6 +86,9 @@ uninstall the package after making an archive
 .TP
 \-o app_only
 archive application data only
+.TP
+\-o docs_only
+archive documents (user data) only
 .TP
 \-o copy=PATH
 copy the app archive to directory PATH when done
