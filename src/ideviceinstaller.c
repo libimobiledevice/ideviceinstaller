@@ -20,6 +20,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 
  * USA
  */
+
+// Supprt %llu, %z in format strings on mingw
+#define __USE_MINGW_ANSI_STDIO 1
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -49,6 +53,11 @@
 #include <plist/plist.h>
 
 #include <zip.h>
+
+#ifdef WIN32
+#include <windows.h>
+#include <asprintf.h>
+#endif
 
 #ifndef ZIP_CODEC_ENCODE
 // this is required for old libzip...
@@ -253,10 +262,14 @@ static void idevice_event_callback(const idevice_event_t* event, void* userdata)
 
 static void idevice_wait_for_operation_to_complete()
 {
+#ifndef WIN32
 	struct timespec ts;
 	ts.tv_sec = 0;
 	ts.tv_nsec = 500000000;
 	is_device_connected = 1;
+#else
+	unsigned long sleep_duration = 500;
+#endif
 
 	/* subscribe to make sure to exit on device removal */
 	idevice_event_subscribe(idevice_event_callback, NULL);
@@ -264,12 +277,20 @@ static void idevice_wait_for_operation_to_complete()
 	/* wait for operation to complete */
 	while (wait_for_op_complete && !op_completed && !err_occurred
 		   && !notified && is_device_connected) {
+#ifndef WIN32
 		nanosleep(&ts, NULL);
+#else
+		Sleep(sleep_duration);
+#endif
 	}
 
 	/* wait some time if a notification is expected */
 	while (notification_expected && !notified && !err_occurred && is_device_connected) {
+#ifndef WIN32
 		nanosleep(&ts, NULL);
+#else
+		Sleep(sleep_duration);
+#endif
 	}
 
 	idevice_event_unsubscribe();

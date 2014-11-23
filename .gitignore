@@ -31,3 +31,5 @@ libtool
 stamp-h1
 src/.libs
 src/ideviceinstaller
+src/ideviceinstaller.exe
+src/ideviceinstaller.exe.manifest
