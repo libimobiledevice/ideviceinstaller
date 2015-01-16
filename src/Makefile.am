@@ -11,9 +11,14 @@ AM_LDFLAGS =			\
 	$(libplist_LIBS)	\
 	$(libzip_LIBS)
 
+.rc.o:
+	windres $^ -o $@
+%.o : %.rc
+	windres $^ -o $@
+	
 bin_PROGRAMS = ideviceinstaller
 
-ideviceinstaller_SOURCES = ideviceinstaller.c
+ideviceinstaller_SOURCES = ideviceinstaller.c ideviceinstaller.exe.manifest.rc
 ideviceinstaller_CFLAGS = $(AM_CFLAGS)
 ideviceinstaller_LDFLAGS = $(AM_LDFLAGS)
 
