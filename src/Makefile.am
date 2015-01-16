@@ -11,9 +11,9 @@ AM_LDFLAGS =			\
 	$(libplist_LIBS)	\
 	$(libzip_LIBS)
 
-bin_PROGRAMS = ideviceput
+bin_PROGRAMS = ideviceinstaller
 
-ideviceput_SOURCES = ideviceinstaller.c
-ideviceput_CFLAGS = $(AM_CFLAGS)
-ideviceput_LDFLAGS = $(AM_LDFLAGS)
+ideviceinstaller_SOURCES = ideviceinstaller.c
+ideviceinstaller_CFLAGS = $(AM_CFLAGS)
+ideviceinstaller_LDFLAGS = $(AM_LDFLAGS)
 
