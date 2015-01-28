@@ -94,7 +94,6 @@ static void notifier(const char *notification, void *unused)
 static void notifier(const char *notification)
 #endif
 {
-	/* printf("notification received: %s\n", notification);*/
 	notified = 1;
 }
 
