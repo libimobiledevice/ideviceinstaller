@@ -334,7 +334,7 @@ static void idevice_wait_for_command_to_complete()
 {
 	struct timespec ts;
 	ts.tv_sec = 0;
-	ts.tv_nsec = 500000000;
+	ts.tv_nsec = 50000000;
 	is_device_connected = 1;
 
 	/* subscribe to make sure to exit on device removal */
