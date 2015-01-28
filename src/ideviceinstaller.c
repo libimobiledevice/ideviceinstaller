@@ -1,7 +1,8 @@
-/**
- * ideviceinstaller -- Manage iPhone/iPod apps
+/*
+ * ideviceinstaller - Manage apps on iOS devices.
  *
- * Copyright (C) 2010 Nikias Bassen <nikias@gmx.li>
+ * Copyright (C) 2010-2015 Martin Szulecki <m.szulecki@libimobiledevice.org>
+ * Copyright (C) 2010-2014 Nikias Bassen <nikias@gmx.li>
  *
  * Licensed under the GNU General Public License Version 2
  *
