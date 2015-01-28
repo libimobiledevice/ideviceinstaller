@@ -410,6 +410,7 @@ static void print_usage(int argc, char **argv)
 		 "  -o, --options\t\tPass additional options to the specified command.\n"
 		 "  -h, --help\t\tprints usage information\n"
 		 "  -d, --debug\t\tenable communication debugging\n" "\n");
+	printf("Homepage: <http://libimobiledevice.org>\n");
 }
 
 static void parse_opts(int argc, char **argv)
