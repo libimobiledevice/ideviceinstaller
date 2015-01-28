@@ -146,7 +146,7 @@ static void status_cb(const char *operation, plist_t status)
 			free(status_msg);
 		}
 	} else {
-		printf("%s: called with invalid data!\n", __func__);
+		fprintf(stderr, "ERROR: %s was called with invalid arguments!\n", __func__);
 	}
 }
 
