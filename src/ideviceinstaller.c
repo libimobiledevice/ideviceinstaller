@@ -18,7 +18,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
  * USA
  */
 #ifdef HAVE_CONFIG_H
@@ -374,7 +374,7 @@ static int str_is_udid(const char* str)
 		if (strchr(allowed, str[length]) == NULL) {
 			return -1;
 		}
-	} 
+	}
 
 	return 0;
 }
@@ -516,7 +516,7 @@ static void parse_opts(int argc, char **argv)
 			if (!options) {
 				options = strdup(optarg);
 			} else {
-				char *newopts =	malloc(strlen(options) + strlen(optarg) + 2);
+				char *newopts = malloc(strlen(options) + strlen(optarg) + 2);
 				strcpy(newopts, options);
 				free(options);
 				strcat(newopts, ",");
@@ -848,7 +848,7 @@ run_again:
 		/* open install package */
 		int errp = 0;
 		struct zip *zf = NULL;
-		
+
 		if ((strlen(appid) > 5) && (strcmp(&appid[strlen(appid)-5], ".ipcc") == 0)) {
 			zf = zip_open(appid, 0, &errp);
 			if (!zf) {
