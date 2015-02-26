@@ -98,16 +98,26 @@ static void notifier(const char *notification)
 	notified = 1;
 }
 
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
+#if defined( HAVE_LIBIMOBILEDEVICE_1_2 )
+static void status_cb(plist_t command, plist_t status, void *unused)
+#elif defined( HAVE_LIBIMOBILEDEVICE_1_1 )
 static void status_cb(const char *operation, plist_t status, void *unused)
 #else
 static void status_cb(const char *operation, plist_t status)
 #endif
 {
+#if defined( HAVE_LIBIMOBILEDEVICE_1_2 )
+	if (status && command) {
+#else
 	if (status && operation) {
+#endif
 		plist_t npercent = plist_dict_get_item(status, "PercentComplete");
 		plist_t nstatus = plist_dict_get_item(status, "Status");
 		plist_t nerror = plist_dict_get_item(status, "Error");
+#if defined( HAVE_LIBIMOBILEDEVICE_1_2 )
+		char *operation = NULL;
+		instproxy_command_get_name(command, &operation);
+#endif
 		int percent = 0;
 		char *status_msg = NULL;
 		if (npercent) {
@@ -146,6 +156,11 @@ static void status_cb(const char *operation, plist_t status)
 			last_status = strdup(status_msg);
 			free(status_msg);
 		}
+#if defined( HAVE_LIBIMOBILEDEVICE_1_2 )
+		if (operation) {
+			free(operation);
+		}
+#endif
 	} else {
 		printf("%s: called with invalid data!\n", __func__);
 	}
