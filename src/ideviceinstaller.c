@@ -1,7 +1,8 @@
-/**
- * ideviceinstaller -- Manage iPhone/iPod apps
+/*
+ * ideviceinstaller - Manage apps on iOS devices.
  *
- * Copyright (C) 2010 Nikias Bassen <nikias@gmx.li>
+ * Copyright (C) 2010-2015 Martin Szulecki <m.szulecki@libimobiledevice.org>
+ * Copyright (C) 2010-2014 Nikias Bassen <nikias@gmx.li>
  *
  * Licensed under the GNU General Public License Version 2
  *
@@ -17,7 +18,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
  * USA
  */
 
@@ -90,73 +91,151 @@ enum cmd_mode {
 int cmd = CMD_NONE;
 
 char *last_status = NULL;
-int wait_for_op_complete = 0;
+int wait_for_command_complete = 0;
 int notification_expected = 0;
 int is_device_connected = 0;
-int op_completed = 0;
+int command_completed = 0;
 int err_occurred = 0;
 int notified = 0;
 
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
-static void notifier(const char *notification, void *unused)
-#else
-static void notifier(const char *notification)
-#endif
+static void print_apps_header()
 {
-	/* printf("notification received: %s\n", notification);*/
+	/* output app details header */
+	printf("%s", "CFBundleIdentifier");
+	printf(", %s", "CFBundleVersion");
+	printf(", %s", "CFBundleDisplayName");
+	printf("\n");
+}
+
+static void print_apps(plist_t apps)
+{
+	uint32_t i = 0;
+	for (i = 0; i < plist_array_get_size(apps); i++) {
+		plist_t app = plist_array_get_item(apps, i);
+		plist_t p_bundle_identifier = plist_dict_get_item(app, "CFBundleIdentifier");
+		char *s_bundle_identifier = NULL;
+		char *s_display_name = NULL;
+		char *s_version = NULL;
+		plist_t display_name = plist_dict_get_item(app, "CFBundleDisplayName");
+		plist_t version = plist_dict_get_item(app, "CFBundleVersion");
+
+		if (p_bundle_identifier) {
+			plist_get_string_val(p_bundle_identifier, &s_bundle_identifier);
+		}
+		if (!s_bundle_identifier) {
+			fprintf(stderr, "ERROR: Failed to get APPID!\n");
+			break;
+		}
+
+		if (version) {
+			plist_get_string_val(version, &s_version);
+		}
+		if (display_name) {
+			plist_get_string_val(display_name, &s_display_name);
+		}
+		if (!s_display_name) {
+			s_display_name = strdup(s_bundle_identifier);
+		}
+
+		/* output app details */
+		printf("%s", s_bundle_identifier);
+		if (s_version) {
+			printf(", \"%s\"", s_version);
+			free(s_version);
+		}
+		printf(", \"%s\"", s_display_name);
+		printf("\n");
+		free(s_display_name);
+		free(s_bundle_identifier);
+	}
+}
+
+static void notifier(const char *notification, void *unused)
+{
 	notified = 1;
 }
 
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
-static void status_cb(const char *operation, plist_t status, void *unused)
-#else
-static void status_cb(const char *operation, plist_t status)
-#endif
+static void status_cb(plist_t command, plist_t status, void *unused)
 {
-	if (status && operation) {
-		plist_t npercent = plist_dict_get_item(status, "PercentComplete");
-		plist_t nstatus = plist_dict_get_item(status, "Status");
-		plist_t nerror = plist_dict_get_item(status, "Error");
-		int percent = 0;
-		char *status_msg = NULL;
-		if (npercent) {
-			uint64_t val = 0;
-			plist_get_uint_val(npercent, &val);
-			percent = val;
-		}
-		if (nstatus) {
-			plist_get_string_val(nstatus, &status_msg);
-			if (!strcmp(status_msg, "Complete")) {
-				op_completed = 1;
-			}
-		}
-		if (!nerror) {
-			if (last_status && (strcmp(last_status, status_msg))) {
-				printf("\r");
-			}
+	if (command && status) {
+		char* command_name = NULL;
+		instproxy_command_get_name(command, &command_name);
 
-			if (!npercent) {
-				printf("%s - %s\n", operation, status_msg);
+		/* get status */
+		char *status_name = NULL;
+		instproxy_status_get_name(status, &status_name);
+
+		if (status_name) {
+			if (!strcmp(status_name, "Complete")) {
+				command_completed = 1;
+			}
+		}
+
+		/* get error if any */
+		char* error_name = NULL;
+		char* error_description = NULL;
+		uint64_t error_code = 0;
+		instproxy_status_get_error(status, &error_name, &error_description, &error_code);
+
+		/* output/handling */
+		if (!error_name) {
+			if (!strcmp(command_name, "Browse")) {
+				uint64_t total = 0;
+				uint64_t current_index = 0;
+				uint64_t current_amount = 0;
+				plist_t current_list = NULL;
+				instproxy_status_get_current_list(status, &total, &current_index, &current_amount, &current_list);
+				if (current_list) {
+					print_apps(current_list);
+					plist_free(current_list);
+				}
 			} else {
-				printf("%s - %s (%d%%)\n", operation, status_msg, percent);
+				/* get progress if any */
+				int percent = -1;
+				instproxy_status_get_percent_complete(status, &percent);
+
+				if (last_status && (strcmp(last_status, status_name))) {
+					printf("\r");
+				}
+
+				if (percent >= 0) {
+					printf("%s: %s (%d%%)\n", command_name, status_name, percent);
+				} else {
+					printf("%s: %s\n", command_name, status_name);
+				}
 			}
 		} else {
-			char *err_msg = NULL;
-			plist_get_string_val(nerror, &err_msg);
-			printf("%s - Error occurred: %s\n", operation, err_msg);
-			free(err_msg);
+			/* report error to the user */
+			if (error_description)
+				fprintf(stderr, "ERROR: %s failed. Got error \"%s\" with code 0x%08"PRIx64": %s\n", command_name, error_name, error_code, error_description ? error_description: "N/A");
+			else
+				fprintf(stderr, "ERROR: %s failed. Got error \"%s\".\n", command_name, error_name);
 			err_occurred = 1;
 		}
+
+		/* clean up */
+		if (error_name)
+			free(error_name);
+
+		if (error_description)
+			free(error_description);
+
 		if (last_status) {
 			free(last_status);
 			last_status = NULL;
 		}
-		if (status_msg) {
-			last_status = strdup(status_msg);
-			free(status_msg);
+
+		if (status_name) {
+			last_status = strdup(status_name);
+			free(status_name);
+		}
+
+		if (command_name) {
+			free(command_name);
+			command_name = NULL;
 		}
 	} else {
-		printf("%s: called with invalid data!\n", __func__);
+		fprintf(stderr, "ERROR: %s was called with invalid arguments!\n", __func__);
 	}
 }
 
@@ -260,12 +339,12 @@ static void idevice_event_callback(const idevice_event_t* event, void* userdata)
 	}
 }
 
-static void idevice_wait_for_operation_to_complete()
+static void idevice_wait_for_command_to_complete()
 {
 #ifndef WIN32
 	struct timespec ts;
 	ts.tv_sec = 0;
-	ts.tv_nsec = 500000000;
+	ts.tv_nsec = 50000000;
 	is_device_connected = 1;
 #else
 	unsigned long sleep_duration = 500;
@@ -274,8 +353,8 @@ static void idevice_wait_for_operation_to_complete()
 	/* subscribe to make sure to exit on device removal */
 	idevice_event_subscribe(idevice_event_callback, NULL);
 
-	/* wait for operation to complete */
-	while (wait_for_op_complete && !op_completed && !err_occurred
+	/* wait for command to complete */
+	while (wait_for_command_complete && !command_completed && !err_occurred
 		   && !notified && is_device_connected) {
 #ifndef WIN32
 		nanosleep(&ts, NULL);
@@ -316,7 +395,7 @@ static int str_is_udid(const char* str)
 		if (strchr(allowed, str[length]) == NULL) {
 			return -1;
 		}
-	} 
+	}
 
 	return 0;
 }
@@ -352,6 +431,7 @@ static void print_usage(int argc, char **argv)
 		 "  -o, --options\t\tPass additional options to the specified command.\n"
 		 "  -h, --help\t\tprints usage information\n"
 		 "  -d, --debug\t\tenable communication debugging\n" "\n");
+	printf("Homepage: <http://libimobiledevice.org>\n");
 }
 
 static void parse_opts(int argc, char **argv)
@@ -457,7 +537,7 @@ static void parse_opts(int argc, char **argv)
 			if (!options) {
 				options = strdup(optarg);
 			} else {
-				char *newopts =	malloc(strlen(options) + strlen(optarg) + 2);
+				char *newopts = malloc(strlen(options) + strlen(optarg) + 2);
 				strcpy(newopts, options);
 				free(options);
 				strcat(newopts, ",");
@@ -475,7 +555,7 @@ static void parse_opts(int argc, char **argv)
 	}
 
 	if (cmd == CMD_NONE) {
-		printf("ERROR: No mode/operation was supplied.\n");
+		printf("ERROR: No mode/command was supplied.\n");
 	}
 
 	if (cmd == CMD_NONE || optind <= 1 || (argc - optind > 0)) {
@@ -587,11 +667,7 @@ int main(int argc, char **argv)
 	instproxy_error_t err;
 	np_client_t np = NULL;
 	afc_client_t afc = NULL;
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
 	lockdownd_service_descriptor_t service = NULL;
-#else
-	uint16_t service = 0;
-#endif
 	int res = 0;
 	char *bundleidentifier = NULL;
 
@@ -619,38 +695,29 @@ int main(int argc, char **argv)
 	}
 
 	np_error_t nperr = np_client_new(phone, service, &np);
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
+
 	if (service) {
 		lockdownd_service_descriptor_free(service);
 	}
 	service = NULL;
-#else
-	service = 0;
-#endif
+
 	if (nperr != NP_E_SUCCESS) {
 		fprintf(stderr, "Could not connect to notification_proxy!\n");
 		goto leave_cleanup;
 	}
 
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	np_set_notify_callback(np, notifier, NULL);
-#else
-	np_set_notify_callback(np, notifier);
-#endif
 
 	const char *noties[3] = { NP_APP_INSTALLED, NP_APP_UNINSTALLED, NULL };
 
 	np_observe_notifications(np, noties);
 
 run_again:
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
 	if (service) {
 		lockdownd_service_descriptor_free(service);
 	}
 	service = NULL;
-#else
-	service = 0;
-#endif
+
 	if ((lockdownd_start_service(client, "com.apple.mobile.installation_proxy",
 		  &service) != LOCKDOWN_E_SUCCESS) || !service) {
 		fprintf(stderr,
@@ -659,14 +726,12 @@ run_again:
 	}
 
 	err = instproxy_client_new(phone, service, &ipc);
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
+
 	if (service) {
 		lockdownd_service_descriptor_free(service);
 	}
 	service = NULL;
-#else
-	service = 0;
-#endif
+
 	if (err != INSTPROXY_E_SUCCESS) {
 		fprintf(stderr, "Could not connect to installation_proxy!\n");
 		goto leave_cleanup;
@@ -692,13 +757,9 @@ run_again:
 			char *elem = strtok(opts, ",");
 			while (elem) {
 				if (!strcmp(elem, "list_system")) {
-					if (!client_opts) {
-						client_opts = instproxy_client_options_new();
-					}
 					instproxy_client_options_add(client_opts, "ApplicationType", "System", NULL);
 				} else if (!strcmp(elem, "list_all")) {
-					instproxy_client_options_free(client_opts);
-					client_opts = NULL;
+					plist_dict_remove_item(client_opts, "ApplicationType");
 				} else if (!strcmp(elem, "list_user")) {
 					/* do nothing, we're already set */
 				} else if (!strcmp(elem, "xml")) {
@@ -709,18 +770,26 @@ run_again:
 			free(opts);
 		}
 
-		err = instproxy_browse(ipc, client_opts, &apps);
-		instproxy_client_options_free(client_opts);
-		if (err != INSTPROXY_E_SUCCESS) {
-			fprintf(stderr, "ERROR: instproxy_browse returned %d\n", err);
-			goto leave_cleanup;
+		if (!xml_mode) {
+			instproxy_client_options_set_return_attributes(client_opts,
+				"CFBundleIdentifier",
+				"CFBundleDisplayName",
+				"CFBundleVersion",
+				"StaticDiskUsage",
+				"DynamicDiskUsage",
+				NULL
+			);
 		}
-		if (!apps || (plist_get_node_type(apps) != PLIST_ARRAY)) {
-			fprintf(stderr,
-					"ERROR: instproxy_browse returnd an invalid plist!\n");
-			goto leave_cleanup;
-		}
+
 		if (xml_mode) {
+			err = instproxy_browse(ipc, client_opts, &apps);
+
+			if (!apps || (plist_get_node_type(apps) != PLIST_ARRAY)) {
+				fprintf(stderr,
+						"ERROR: instproxy_browse returnd an invalid plist!\n");
+				goto leave_cleanup;
+			}
+
 			char *xml = NULL;
 			uint32_t len = 0;
 
@@ -732,47 +801,22 @@ run_again:
 			plist_free(apps);
 			goto leave_cleanup;
 		}
-		printf("Total: %d apps\n", plist_array_get_size(apps));
-		uint32_t i = 0;
-		for (i = 0; i < plist_array_get_size(apps); i++) {
-			plist_t app = plist_array_get_item(apps, i);
-			plist_t p_appid =
-				plist_dict_get_item(app, "CFBundleIdentifier");
-			char *s_appid = NULL;
-			char *s_dispName = NULL;
-			char *s_version = NULL;
-			plist_t dispName =
-				plist_dict_get_item(app, "CFBundleDisplayName");
-			plist_t version = plist_dict_get_item(app, "CFBundleVersion");
 
-			if (p_appid) {
-				plist_get_string_val(p_appid, &s_appid);
-			}
-			if (!s_appid) {
-				fprintf(stderr, "ERROR: Failed to get APPID!\n");
-				break;
-			}
+		print_apps_header();
 
-			if (dispName) {
-				plist_get_string_val(dispName, &s_dispName);
-			}
-			if (version) {
-				plist_get_string_val(version, &s_version);
-			}
-
-			if (!s_dispName) {
-				s_dispName = strdup(s_appid);
-			}
-			if (s_version) {
-				printf("%s - %s %s\n", s_appid, s_dispName, s_version);
-				free(s_version);
-			} else {
-				printf("%s - %s\n", s_appid, s_dispName);
-			}
-			free(s_dispName);
-			free(s_appid);
+		err = instproxy_browse_with_callback(ipc, client_opts, status_cb, NULL);
+		if (err == INSTPROXY_E_RECEIVE_TIMEOUT) {
+			fprintf(stderr, "NOTE: timeout waiting for device to browse apps, trying again...\n");
 		}
-		plist_free(apps);
+
+		instproxy_client_options_free(client_opts);
+		if (err != INSTPROXY_E_SUCCESS) {
+			fprintf(stderr, "ERROR: instproxy_browse returned %d\n", err);
+			goto leave_cleanup;
+		}
+
+		wait_for_command_complete = 1;
+		notification_expected = 0;
 	} else if (cmd == CMD_INSTALL || cmd == CMD_UPGRADE) {
 		plist_t sinf = NULL;
 		plist_t meta = NULL;
@@ -781,14 +825,11 @@ run_again:
 		uint64_t af = 0;
 		char buf[8192];
 
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
 		if (service) {
 			lockdownd_service_descriptor_free(service);
 		}
 		service = NULL;
-#else
-		service = 0;
-#endif
+
 		if ((lockdownd_start_service(client, "com.apple.afc", &service) !=
 			 LOCKDOWN_E_SUCCESS) || !service) {
 			fprintf(stderr, "Could not start com.apple.afc!\n");
@@ -828,7 +869,7 @@ run_again:
 		/* open install package */
 		int errp = 0;
 		struct zip *zf = NULL;
-		
+
 		if ((strlen(appid) > 5) && (strcmp(&appid[strlen(appid)-5], ".ipcc") == 0)) {
 			zf = zip_open(appid, 0, &errp);
 			if (!zf) {
@@ -1075,36 +1116,23 @@ run_again:
 		/* perform installation or upgrade */
 		if (cmd == CMD_INSTALL) {
 			printf("Installing '%s'\n", bundleidentifier);
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 			instproxy_install(ipc, pkgname, client_opts, status_cb, NULL);
-#else
-			instproxy_install(ipc, pkgname, client_opts, status_cb);
-#endif
 		} else {
 			printf("Upgrading '%s'\n", bundleidentifier);
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 			instproxy_upgrade(ipc, pkgname, client_opts, status_cb, NULL);
-#else
-			instproxy_upgrade(ipc, pkgname, client_opts, status_cb);
-#endif
 		}
 		instproxy_client_options_free(client_opts);
 		free(pkgname);
-		wait_for_op_complete = 1;
+		wait_for_command_complete = 1;
 		notification_expected = 1;
 	} else if (cmd == CMD_UNINSTALL) {
 		printf("Uninstalling '%s'\n", appid);
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 		instproxy_uninstall(ipc, appid, NULL, status_cb, NULL);
-#else
-		instproxy_uninstall(ipc, appid, NULL, status_cb);
-#endif
-		wait_for_op_complete = 1;
+		wait_for_command_complete = 1;
 		notification_expected = 0;
 	} else if (cmd == CMD_LIST_ARCHIVES) {
 		int xml_mode = 0;
 		plist_t dict = NULL;
-		plist_t lres = NULL;
 
 		/* look for options */
 		if (options) {
@@ -1123,16 +1151,10 @@ run_again:
 			fprintf(stderr, "ERROR: lookup_archives returned %d\n", err);
 			goto leave_cleanup;
 		}
+
 		if (!dict) {
 			fprintf(stderr,
 					"ERROR: lookup_archives did not return a plist!?\n");
-			goto leave_cleanup;
-		}
-
-		lres = plist_dict_get_item(dict, "LookupResult");
-		if (!lres || (plist_get_node_type(lres) != PLIST_DICT)) {
-			plist_free(dict);
-			fprintf(stderr, "ERROR: Could not get dict 'LookupResult'\n");
 			goto leave_cleanup;
 		}
 
@@ -1140,7 +1162,7 @@ run_again:
 			char *xml = NULL;
 			uint32_t len = 0;
 
-			plist_to_xml(lres, &xml, &len);
+			plist_to_xml(dict, &xml, &len);
 			if (xml) {
 				puts(xml);
 				free(xml);
@@ -1152,8 +1174,8 @@ run_again:
 		plist_t node = NULL;
 		char *key = NULL;
 
-		printf("Total: %d archived apps\n", plist_dict_get_size(lres));
-		plist_dict_new_iter(lres, &iter);
+		printf("Total: %d archived apps\n", plist_dict_get_size(dict));
+		plist_dict_new_iter(dict, &iter);
 		if (!iter) {
 			plist_free(dict);
 			fprintf(stderr, "ERROR: Could not create plist_dict_iter!\n");
@@ -1162,7 +1184,7 @@ run_again:
 		do {
 			key = NULL;
 			node = NULL;
-			plist_dict_next_item(lres, iter, &key, &node);
+			plist_dict_next_item(dict, iter, &key, &node);
 			if (key && (plist_get_node_type(node) == PLIST_DICT)) {
 				char *s_dispName = NULL;
 				char *s_version = NULL;
@@ -1247,14 +1269,11 @@ run_again:
 				goto leave_cleanup;
 			}
 
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
 			if (service) {
 				lockdownd_service_descriptor_free(service);
 			}
 			service = NULL;
-#else
-			service = 0;
-#endif
+
 			if ((lockdownd_start_service(client, "com.apple.afc", &service) != LOCKDOWN_E_SUCCESS) || !service) {
 				fprintf(stderr, "Could not start com.apple.afc!\n");
 				free(copy_path);
@@ -1270,20 +1289,17 @@ run_again:
 			}
 		}
 
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 		instproxy_archive(ipc, appid, client_opts, status_cb, NULL);
-#else
-		instproxy_archive(ipc, appid, client_opts, status_cb);
-#endif
+
 		instproxy_client_options_free(client_opts);
-		wait_for_op_complete = 1;
+		wait_for_command_complete = 1;
 		if (skip_uninstall) {
 			notification_expected = 0;
 		} else {
 			notification_expected = 1;
 		}
 
-		idevice_wait_for_operation_to_complete();
+		idevice_wait_for_command_to_complete();
 
 		if (copy_path) {
 			if (err_occurred) {
@@ -1408,23 +1424,15 @@ run_again:
 		}
 		goto leave_cleanup;
 	} else if (cmd == CMD_RESTORE) {
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 		instproxy_restore(ipc, appid, NULL, status_cb, NULL);
-#else
-		instproxy_restore(ipc, appid, NULL, status_cb);
-#endif
-		wait_for_op_complete = 1;
+		wait_for_command_complete = 1;
 		notification_expected = 1;
 	} else if (cmd == CMD_REMOVE_ARCHIVE) {
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 		instproxy_remove_archive(ipc, appid, NULL, status_cb, NULL);
-#else
-		instproxy_remove_archive(ipc, appid, NULL, status_cb);
-#endif
-		wait_for_op_complete = 1;
+		wait_for_command_complete = 1;
 	} else {
 		printf
-			("ERROR: no operation selected?! This should not be reached!\n");
+			("ERROR: no command selected?! This should not be reached!\n");
 		res = -2;
 		goto leave_cleanup;
 	}
@@ -1435,7 +1443,7 @@ run_again:
 		client = NULL;
 	}
 
-	idevice_wait_for_operation_to_complete();
+	idevice_wait_for_command_to_complete();
 
 leave_cleanup:
 	if (bundleidentifier) {
