@@ -288,7 +288,7 @@ static int zip_get_app_directory(struct zip* zf, char** path)
 		if (name != NULL) {
 			/* check if we have a "Payload/.../" name */
 			len = strlen(name);
-			if (!strncmp(name, "Payload/", 8) && (len > 8)) {
+			if (!strncmp(name, "Payload/", 8) && (len > 8) && name[8] != '.') {
 				/* locate the second directory delimiter */
 				const char* p = name + 8;
 				do {
