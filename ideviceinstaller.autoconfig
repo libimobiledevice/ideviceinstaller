@@ -22,7 +22,7 @@ nuget{
         requireLicenseAcceptance:false;
         description: "Manage apps of iOS devices.";
         summary: "Manage apps of iOS devices.";
-        copyright: "https://github.com/libimobiledevice/ideviceinstaller/blob/master/AUTHORS"";
+        copyright: "https://github.com/libimobiledevice/ideviceinstaller/blob/master/AUTHORS";
         releaseNotes: "Release 1.1.0 of ideviceinstaller. See https://github.com/libimobiledevice-win32/ideviceinstaller/tree/msvc-1.1.0 for more.";
         tags: { ideviceinstaller, native };
     }
