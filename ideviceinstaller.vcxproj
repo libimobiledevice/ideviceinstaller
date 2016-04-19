@@ -20,10 +20,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\asprintf.c" />
     <ClCompile Include="src\ideviceinstaller.c" />
+    <ClCompile Include="src\libgen.c" />
+    <ClCompile Include="src\vasprintf-c99.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\asprintf.h" />
+    <ClInclude Include="src\libgen.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{10E88C2B-E98B-4EAA-AA34-9CA59136BBFD}</ProjectGuid>

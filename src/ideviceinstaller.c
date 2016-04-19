@@ -29,10 +29,19 @@
 #define __USE_GNU 1
 #include <stdio.h>
 #include <string.h>
+
+#ifdef WIN32
+#include <windows.h>
+#endif
+
+#ifdef _MSC_VER
+#include "asprintf.h"
+#include "libgen.h"
+#endif
+
 #include <getopt.h>
 #include <errno.h>
 #include <time.h>
-#include <libgen.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <sys/stat.h>
@@ -323,10 +332,14 @@ static void idevice_event_callback(const idevice_event_t* event, void* userdata)
 
 static void idevice_wait_for_command_to_complete()
 {
+#ifndef WIN32
 	struct timespec ts;
 	ts.tv_sec = 0;
 	ts.tv_nsec = 50000000;
 	is_device_connected = 1;
+#else
+    unsigned long sleep_duration = 500;
+#endif
 
 	/* subscribe to make sure to exit on device removal */
 	idevice_event_subscribe(idevice_event_callback, NULL);
@@ -334,12 +347,20 @@ static void idevice_wait_for_command_to_complete()
 	/* wait for command to complete */
 	while (wait_for_command_complete && !command_completed && !err_occurred
 		   && !notified && is_device_connected) {
-		nanosleep(&ts, NULL);
+#ifndef WIN32
+        nanosleep(&ts, NULL);
+#else
+        Sleep(sleep_duration);
+#endif
 	}
 
 	/* wait some time if a notification is expected */
 	while (notification_expected && !notified && !err_occurred && is_device_connected) {
-		nanosleep(&ts, NULL);
+#ifndef WIN32
+        nanosleep(&ts, NULL);
+#else
+        Sleep(sleep_duration);
+#endif
 	}
 
 	idevice_event_unsubscribe();
