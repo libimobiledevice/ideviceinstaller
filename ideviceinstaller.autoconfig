@@ -29,22 +29,22 @@ nuget{
 
     files{
 	[x86,v140,debug] {
-            bin: { "Win32\Debug\ideviceinstaller.dll" };
+            bin: { "Win32\Debug\ideviceinstaller.exe" };
             symbols: Win32\Debug\ideviceinstaller.pdb;
         }
 
 	[x86,v140,release] {
-            bin: { "Win32\Release\ideviceinstaller.dll" };
+            bin: { "Win32\Release\ideviceinstaller.exe" };
             symbols: Win32\Release\ideviceinstaller.pdb;
         }
 
 	[x64,v140,debug] {
-            bin: { "x64\Debug\ideviceinstaller.dll" };
+            bin: { "x64\Debug\ideviceinstaller.exe" };
             symbols: x64\Debug\ideviceinstaller.pdb;
         }
 
 	[x64,v140,release] {
-            bin: { "x64\Release\ideviceinstaller.dll" };
+            bin: { "x64\Release\ideviceinstaller.exe" };
             symbols: x64\Release\ideviceinstaller.pdb;
         }
     }
