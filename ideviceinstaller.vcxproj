@@ -168,6 +168,10 @@
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>$(ProjectDir)\packages\libxml2.2.7.8.7\build\native\lib\v110\$(Platform)\$(Configuration)\dynamic\cdecl\libxml2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">8388608</StackReserveSize>
+      <StackReserveSize Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">8388608</StackReserveSize>
+      <StackReserveSize Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">8388608</StackReserveSize>
+      <StackReserveSize Condition="'$(Configuration)|$(Platform)'=='Release|x64'">8388608</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
