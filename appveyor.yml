@@ -1,0 +1,21 @@
+before_build:
+  - nuget restore
+
+build_script:
+  - msbuild ideviceinstaller.sln /p:Configuration=Debug /p:Platform=Win32 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - msbuild ideviceinstaller.sln /p:Configuration=Release /p:Platform=Win32 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - msbuild ideviceinstaller.sln /p:Configuration=Debug /p:Platform=x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - msbuild ideviceinstaller.sln /p:Configuration=Release /p:Platform=x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+
+on_success:
+  - cmd: choco install wget
+  - cmd: wget http://coapp.org/files/CoApp.Tools.Powershell.msi
+  - cmd: start /wait msiexec /qb /i CoApp.Tools.Powershell.msi
+  - ps: .\CreateNuGetPackage.ps1 -Build $ENV:APPVEYOR_BUILD_NUMBER
+  - cmd: appveyor PushArtifact ideviceinstaller.1.1.0.%APPVEYOR_BUILD_NUMBER%.nupkg
+  - cmd: appveyor PushArtifact ideviceinstaller.symbols.1.1.0.%APPVEYOR_BUILD_NUMBER%.nupkg
+  - cmd: appveyor PushArtifact ideviceinstaller.redist.1.1.0.%APPVEYOR_BUILD_NUMBER%.nupkg
+
+nuget:
+  project_feed: true
+  account_feed: true
