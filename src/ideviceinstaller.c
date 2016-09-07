@@ -51,7 +51,7 @@
 
 #include <zip.h>
 
-#ifndef ZIP_CODEC_ENCODE
+#if !(defined(ZIP_CODEC_ENCODE) || LIBZIP_VERSION_MAJOR > 0 || LIBZIP_VERSION_MINOR >= 10)
 // this is required for old libzip...
 #define zip_get_num_entries(x, y) zip_get_num_files(x)
 #define zip_int64_t ssize_t
