@@ -336,10 +336,10 @@ static void idevice_wait_for_command_to_complete()
 	struct timespec ts;
 	ts.tv_sec = 0;
 	ts.tv_nsec = 50000000;
-	is_device_connected = 1;
 #else
     unsigned long sleep_duration = 500;
 #endif
+	is_device_connected = 1;
 
 	/* subscribe to make sure to exit on device removal */
 	idevice_event_subscribe(idevice_event_callback, NULL);
