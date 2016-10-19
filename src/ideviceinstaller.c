@@ -98,6 +98,20 @@ int command_completed = 0;
 int err_occurred = 0;
 int notified = 0;
 
+#ifdef WIN32
+typedef struct __stat64 stat_generic_t;
+#else
+typedef struct stat stat_generic_t;
+#endif
+static int stat_generic(const char* filename, stat_generic_t* stat_gen)
+{
+#ifdef WIN32
+	return __stat64(filename, stat_gen);
+#else
+	return stat(filename, stat_gen);
+#endif
+}
+
 static void print_apps_header()
 {
 	/* output app details header */
@@ -825,7 +839,7 @@ run_again:
 		plist_t sinf = NULL;
 		plist_t meta = NULL;
 		char *pkgname = NULL;
-		struct stat fst;
+		stat_generic_t fst;
 		uint64_t af = 0;
 		char buf[8192];
 
@@ -848,7 +862,7 @@ run_again:
 			goto leave_cleanup;
 		}
 
-		if (stat(appid, &fst) != 0) {
+		if (stat_generic(appid, &fst) != 0) {
 			fprintf(stderr, "ERROR: stat: %s: %s\n", appid, strerror(errno));
 			goto leave_cleanup;
 		}
