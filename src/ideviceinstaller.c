@@ -51,8 +51,11 @@
 
 #include <zip.h>
 
-#ifndef ZIP_CODEC_ENCODE
+#ifndef LIBZIP_VERSION
 // this is required for old libzip...
+// libzip 0.10 introduced the define for LIBZIP_VERSION (used by all later 
+// versions) and also introduced the declarations below.
+// If it's not there, assume we'll need these defines.
 #define zip_get_num_entries(x, y) zip_get_num_files(x)
 #define zip_int64_t ssize_t
 #define zip_uint64_t off_t
