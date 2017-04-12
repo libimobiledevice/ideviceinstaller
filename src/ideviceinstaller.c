@@ -29,10 +29,19 @@
 #define __USE_GNU 1
 #include <stdio.h>
 #include <string.h>
+
+#ifdef WIN32
+#include <windows.h>
+#endif
+
+#ifdef _MSC_VER
+#include "asprintf.h"
+#include "libgen.h"
+#endif
+
 #include <getopt.h>
 #include <errno.h>
 #include <time.h>
-#include <libgen.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <sys/stat.h>
@@ -88,6 +97,20 @@ int is_device_connected = 0;
 int command_completed = 0;
 int err_occurred = 0;
 int notified = 0;
+
+#ifdef WIN32
+typedef struct __stat64 stat_generic_t;
+#else
+typedef struct stat stat_generic_t;
+#endif
+static int stat_generic(const char* filename, stat_generic_t* stat_gen)
+{
+#ifdef WIN32
+	return __stat64(filename, stat_gen);
+#else
+	return stat(filename, stat_gen);
+#endif
+}
 
 static void print_apps_header()
 {
@@ -336,9 +359,13 @@ static void idevice_event_callback(const idevice_event_t* event, void* userdata)
 
 static void idevice_wait_for_command_to_complete()
 {
+#ifndef WIN32
 	struct timespec ts;
 	ts.tv_sec = 0;
 	ts.tv_nsec = 50000000;
+#else
+    unsigned long sleep_duration = 500;
+#endif
 	is_device_connected = 1;
 
 	/* subscribe to make sure to exit on device removal */
@@ -347,12 +374,20 @@ static void idevice_wait_for_command_to_complete()
 	/* wait for command to complete */
 	while (wait_for_command_complete && !command_completed && !err_occurred
 		   && !notified && is_device_connected) {
-		nanosleep(&ts, NULL);
+#ifndef WIN32
+        nanosleep(&ts, NULL);
+#else
+        Sleep(sleep_duration);
+#endif
 	}
 
 	/* wait some time if a notification is expected */
 	while (notification_expected && !notified && !err_occurred && is_device_connected) {
-		nanosleep(&ts, NULL);
+#ifndef WIN32
+        nanosleep(&ts, NULL);
+#else
+        Sleep(sleep_duration);
+#endif
 	}
 
 	idevice_event_unsubscribe();
@@ -804,7 +839,7 @@ run_again:
 		plist_t sinf = NULL;
 		plist_t meta = NULL;
 		char *pkgname = NULL;
-		struct stat fst;
+		stat_generic_t fst;
 		uint64_t af = 0;
 		char buf[8192];
 
@@ -827,7 +862,7 @@ run_again:
 			goto leave_cleanup;
 		}
 
-		if (stat(appid, &fst) != 0) {
+		if (stat_generic(appid, &fst) != 0) {
 			fprintf(stderr, "ERROR: stat: %s: %s\n", appid, strerror(errno));
 			goto leave_cleanup;
 		}

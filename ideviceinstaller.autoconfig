@@ -1,0 +1,51 @@
+configurations {
+    Toolset { 
+        key : "PlatformToolset"; 
+        choices: { v140 };  
+        // Explicitly Not including pivot variants:  "WindowsKernelModeDriver8.0", "WindowsApplicationForDrivers8.0", "WindowsUserModeDriver8.0" 
+
+        // We're normalizing out the concept of the v140 platform -- Overloading the $(PlatformToolset) variable for additional pivots was a dumb idea.
+        v140.condition = "( $(PlatformToolset.ToLower().IndexOf('v140')) > -1 Or '$(PlatformToolset.ToLower())' == 'windowskernelmodedriver8.0' Or '$(PlatformToolset.ToLower())' == 'windowsapplicationfordrivers8.0' Or '$(PlatformToolset.ToLower())' == 'windowsusermodedriver8.0' )";
+    };
+}
+
+nuget{
+    nuspec{
+        id = ideviceinstaller;
+        version : 1.1.0.{build};
+        title: ideviceinstaller;
+        authors: {libimobiledevice Project};
+        owners: {quamotion};
+        licenseUrl: "http://opensource.org/licenses/LGPL-2.1";
+        projectUrl: "http://www.libimobiledevice.org/";
+        iconUrl: "http://www.nuget.org/Content/Images/packageDefaultIcon-50x50.png";
+        requireLicenseAcceptance:false;
+        description: "Manage apps of iOS devices.";
+        summary: "Manage apps of iOS devices.";
+        copyright: "https://github.com/libimobiledevice/ideviceinstaller/blob/master/AUTHORS";
+        releaseNotes: "Release 1.1.0 of ideviceinstaller. See https://github.com/libimobiledevice-win32/ideviceinstaller/tree/msvc-1.1.0 for more.";
+        tags: { ideviceinstaller, native };
+    }
+
+    files{
+	[x86,v140,debug] {
+            bin: { "Win32\Debug\ideviceinstaller.exe" };
+            symbols: Win32\Debug\ideviceinstaller.pdb;
+        }
+
+	[x86,v140,release] {
+            bin: { "Win32\Release\ideviceinstaller.exe" };
+            symbols: Win32\Release\ideviceinstaller.pdb;
+        }
+
+	[x64,v140,debug] {
+            bin: { "x64\Debug\ideviceinstaller.exe" };
+            symbols: x64\Debug\ideviceinstaller.pdb;
+        }
+
+	[x64,v140,release] {
+            bin: { "x64\Release\ideviceinstaller.exe" };
+            symbols: x64\Release\ideviceinstaller.pdb;
+        }
+    }
+}
