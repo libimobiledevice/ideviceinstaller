@@ -173,7 +173,6 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>$(ProjectDir)\packages\libxml2.2.7.8.7\build\native\lib\v110\$(Platform)\$(Configuration)\dynamic\cdecl\libxml2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">8388608</StackReserveSize>
       <StackReserveSize Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">8388608</StackReserveSize>
       <StackReserveSize Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">8388608</StackReserveSize>
@@ -184,10 +183,6 @@
   <ImportGroup Label="ExtensionTargets">
     <Import Project="packages\libiconv.redist.1.14.0.11\build\native\libiconv.redist.targets" Condition="Exists('packages\libiconv.redist.1.14.0.11\build\native\libiconv.redist.targets')" />
     <Import Project="packages\libiconv.1.14.0.11\build\native\libiconv.targets" Condition="Exists('packages\libiconv.1.14.0.11\build\native\libiconv.targets')" />
-    <Import Project="packages\libplist.redist.1.12.49\build\native\libplist.redist.targets" Condition="Exists('packages\libplist.redist.1.12.49\build\native\libplist.redist.targets')" />
-    <Import Project="packages\libxml2.redist.2.7.8.7\build\native\libxml2.redist.targets" Condition="Exists('packages\libxml2.redist.2.7.8.7\build\native\libxml2.redist.targets')" />
-    <Import Project="packages\libxml2.2.7.8.7\build\native\libxml2.targets" Condition="Exists('packages\libxml2.2.7.8.7\build\native\libxml2.targets')" />
-    <Import Project="packages\libplist.1.12.49\build\native\libplist.targets" Condition="Exists('packages\libplist.1.12.49\build\native\libplist.targets')" />
     <Import Project="packages\dirent.1.13.1\build\native\dirent.targets" Condition="Exists('packages\dirent.1.13.1\build\native\dirent.targets')" />
     <Import Project="packages\fix8.dependencies.getopt.1.0.20151130.1\build\native\fix8.dependencies.getopt.targets" Condition="Exists('packages\fix8.dependencies.getopt.1.0.20151130.1\build\native\fix8.dependencies.getopt.targets')" />
     <Import Project="packages\libzip.redist.1.1.2.7\build\native\libzip.redist.targets" Condition="Exists('packages\libzip.redist.1.1.2.7\build\native\libzip.redist.targets')" />
@@ -199,8 +194,10 @@
     <Import Project="packages\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.targets" Condition="Exists('packages\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.targets')" />
     <Import Project="packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.targets" Condition="Exists('packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.targets')" />
     <Import Project="packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.targets" Condition="Exists('packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.targets')" />
-    <Import Project="packages\libimobiledevice.redist.1.2.1.73\build\native\libimobiledevice.redist.targets" Condition="Exists('packages\libimobiledevice.redist.1.2.1.73\build\native\libimobiledevice.redist.targets')" />
-    <Import Project="packages\libimobiledevice.1.2.1.73\build\native\libimobiledevice.targets" Condition="Exists('packages\libimobiledevice.1.2.1.73\build\native\libimobiledevice.targets')" />
+    <Import Project="packages\libimobiledevice.redist.1.2.1.100\build\native\libimobiledevice.redist.targets" Condition="Exists('packages\libimobiledevice.redist.1.2.1.100\build\native\libimobiledevice.redist.targets')" />
+    <Import Project="packages\libimobiledevice.1.2.1.100\build\native\libimobiledevice.targets" Condition="Exists('packages\libimobiledevice.1.2.1.100\build\native\libimobiledevice.targets')" />
+    <Import Project="packages\libplist.redist.1.12.115\build\native\libplist.redist.targets" Condition="Exists('packages\libplist.redist.1.12.115\build\native\libplist.redist.targets')" />
+    <Import Project="packages\libplist.1.12.115\build\native\libplist.targets" Condition="Exists('packages\libplist.1.12.115\build\native\libplist.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -208,10 +205,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('packages\libiconv.redist.1.14.0.11\build\native\libiconv.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libiconv.redist.1.14.0.11\build\native\libiconv.redist.targets'))" />
     <Error Condition="!Exists('packages\libiconv.1.14.0.11\build\native\libiconv.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libiconv.1.14.0.11\build\native\libiconv.targets'))" />
-    <Error Condition="!Exists('packages\libplist.redist.1.12.49\build\native\libplist.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libplist.redist.1.12.49\build\native\libplist.redist.targets'))" />
-    <Error Condition="!Exists('packages\libxml2.redist.2.7.8.7\build\native\libxml2.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libxml2.redist.2.7.8.7\build\native\libxml2.redist.targets'))" />
-    <Error Condition="!Exists('packages\libxml2.2.7.8.7\build\native\libxml2.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libxml2.2.7.8.7\build\native\libxml2.targets'))" />
-    <Error Condition="!Exists('packages\libplist.1.12.49\build\native\libplist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libplist.1.12.49\build\native\libplist.targets'))" />
     <Error Condition="!Exists('packages\dirent.1.13.1\build\native\dirent.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\dirent.1.13.1\build\native\dirent.targets'))" />
     <Error Condition="!Exists('packages\fix8.dependencies.getopt.1.0.20151130.1\build\native\fix8.dependencies.getopt.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\fix8.dependencies.getopt.1.0.20151130.1\build\native\fix8.dependencies.getopt.props'))" />
     <Error Condition="!Exists('packages\fix8.dependencies.getopt.1.0.20151130.1\build\native\fix8.dependencies.getopt.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\fix8.dependencies.getopt.1.0.20151130.1\build\native\fix8.dependencies.getopt.targets'))" />
@@ -224,11 +217,12 @@
     <Error Condition="!Exists('packages\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.targets'))" />
     <Error Condition="!Exists('packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.targets'))" />
     <Error Condition="!Exists('packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.targets'))" />
-    <Error Condition="!Exists('packages\libimobiledevice.redist.1.2.1.73\build\native\libimobiledevice.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libimobiledevice.redist.1.2.1.73\build\native\libimobiledevice.redist.targets'))" />
-    <Error Condition="!Exists('packages\libimobiledevice.1.2.1.73\build\native\libimobiledevice.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libimobiledevice.1.2.1.73\build\native\libimobiledevice.targets'))" />
+    <Error Condition="!Exists('packages\libimobiledevice.redist.1.2.1.100\build\native\libimobiledevice.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libimobiledevice.redist.1.2.1.100\build\native\libimobiledevice.redist.targets'))" />
+    <Error Condition="!Exists('packages\libimobiledevice.1.2.1.100\build\native\libimobiledevice.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libimobiledevice.1.2.1.100\build\native\libimobiledevice.targets'))" />
+    <Error Condition="!Exists('packages\libplist.redist.1.12.115\build\native\libplist.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libplist.redist.1.12.115\build\native\libplist.redist.targets'))" />
+    <Error Condition="!Exists('packages\libplist.1.12.115\build\native\libplist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libplist.1.12.115\build\native\libplist.targets'))" />
   </Target>
   <ItemGroup>
-    <DynamicLibraries Include="packages\libxml2.redist.2.7.8.7\build\native\bin\v110\$(Platform)\Release\dynamic\cdecl\libxml2.dll" />
     <DynamicLibraries Include="packages\zlib.redist.1.2.8.7\build\native\bin\v120\$(Platform)\Release\dynamic\cdecl\zlib.dll" />
     <DynamicLibraries Include="packages\libiconv.redist.1.14.0.11\build\native\bin\v110\$(Platform)\Release\dynamic\cdecl\libiconv.dll" />
   </ItemGroup>
