@@ -330,7 +330,10 @@ static int zip_get_app_directory(struct zip* zf, char** path)
 static void idevice_event_callback(const idevice_event_t* event, void* userdata)
 {
 	if (event->event == IDEVICE_DEVICE_REMOVE) {
-		is_device_connected = 0;
+		if (!udid || (udid && !strcmp(udid, event->udid))) {
+			fprintf(stderr, "ideviceinstaller: Device removed\n");
+			is_device_connected = 0;
+		}
 	}
 }
 
