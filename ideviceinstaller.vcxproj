@@ -194,10 +194,10 @@
     <Import Project="packages\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.targets" Condition="Exists('packages\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.targets')" />
     <Import Project="packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.targets" Condition="Exists('packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.targets')" />
     <Import Project="packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.targets" Condition="Exists('packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.targets')" />
-    <Import Project="packages\libimobiledevice.redist.1.2.1.100\build\native\libimobiledevice.redist.targets" Condition="Exists('packages\libimobiledevice.redist.1.2.1.100\build\native\libimobiledevice.redist.targets')" />
-    <Import Project="packages\libimobiledevice.1.2.1.100\build\native\libimobiledevice.targets" Condition="Exists('packages\libimobiledevice.1.2.1.100\build\native\libimobiledevice.targets')" />
-    <Import Project="packages\libplist.redist.1.12.115\build\native\libplist.redist.targets" Condition="Exists('packages\libplist.redist.1.12.115\build\native\libplist.redist.targets')" />
-    <Import Project="packages\libplist.1.12.115\build\native\libplist.targets" Condition="Exists('packages\libplist.1.12.115\build\native\libplist.targets')" />
+    <Import Project="packages\libplist.redist.2.0.1.171\build\native\libplist.redist.targets" Condition="Exists('packages\libplist.redist.2.0.1.171\build\native\libplist.redist.targets')" />
+    <Import Project="packages\libplist.2.0.1.171\build\native\libplist.targets" Condition="Exists('packages\libplist.2.0.1.171\build\native\libplist.targets')" />
+    <Import Project="packages\libimobiledevice.redist.1.2.1.192\build\native\libimobiledevice.redist.targets" Condition="Exists('packages\libimobiledevice.redist.1.2.1.192\build\native\libimobiledevice.redist.targets')" />
+    <Import Project="packages\libimobiledevice.1.2.1.192\build\native\libimobiledevice.targets" Condition="Exists('packages\libimobiledevice.1.2.1.192\build\native\libimobiledevice.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -217,10 +217,10 @@
     <Error Condition="!Exists('packages\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v120.windesktop.msvcstl.dyn.rt-dyn.x86.targets'))" />
     <Error Condition="!Exists('packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x64.targets'))" />
     <Error Condition="!Exists('packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.1.0.2.0\build\native\openssl.v140.windesktop.msvcstl.dyn.rt-dyn.x86.targets'))" />
-    <Error Condition="!Exists('packages\libimobiledevice.redist.1.2.1.100\build\native\libimobiledevice.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libimobiledevice.redist.1.2.1.100\build\native\libimobiledevice.redist.targets'))" />
-    <Error Condition="!Exists('packages\libimobiledevice.1.2.1.100\build\native\libimobiledevice.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libimobiledevice.1.2.1.100\build\native\libimobiledevice.targets'))" />
-    <Error Condition="!Exists('packages\libplist.redist.1.12.115\build\native\libplist.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libplist.redist.1.12.115\build\native\libplist.redist.targets'))" />
-    <Error Condition="!Exists('packages\libplist.1.12.115\build\native\libplist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libplist.1.12.115\build\native\libplist.targets'))" />
+    <Error Condition="!Exists('packages\libplist.redist.2.0.1.171\build\native\libplist.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libplist.redist.2.0.1.171\build\native\libplist.redist.targets'))" />
+    <Error Condition="!Exists('packages\libplist.2.0.1.171\build\native\libplist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libplist.2.0.1.171\build\native\libplist.targets'))" />
+    <Error Condition="!Exists('packages\libimobiledevice.redist.1.2.1.192\build\native\libimobiledevice.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libimobiledevice.redist.1.2.1.192\build\native\libimobiledevice.redist.targets'))" />
+    <Error Condition="!Exists('packages\libimobiledevice.1.2.1.192\build\native\libimobiledevice.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\libimobiledevice.1.2.1.192\build\native\libimobiledevice.targets'))" />
   </Target>
   <ItemGroup>
     <DynamicLibraries Include="packages\zlib.redist.1.2.8.7\build\native\bin\v120\$(Platform)\Release\dynamic\cdecl\zlib.dll" />
