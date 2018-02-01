@@ -333,7 +333,7 @@ static void idevice_wait_for_command_to_complete()
 
 	/* wait for command to complete */
 	while (wait_for_command_complete && !command_completed && !err_occurred
-		   && !notified && is_device_connected) {
+		   && is_device_connected) {
 		nanosleep(&ts, NULL);
 	}
 
