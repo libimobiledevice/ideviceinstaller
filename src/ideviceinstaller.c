@@ -180,7 +180,7 @@ static void status_cb(plist_t command, plist_t status, void *unused)
 					print_apps(current_list);
 					plist_free(current_list);
 				}
-			} else {
+			} else if (status_name) {
 				/* get progress if any */
 				int percent = -1;
 				instproxy_status_get_percent_complete(status, &percent);
