@@ -179,13 +179,13 @@ static void status_cb(plist_t command, plist_t status, void *unused)
 				instproxy_status_get_percent_complete(status, &percent);
 
 				if (last_status && (strcmp(last_status, status_name))) {
-					printf("\r");
+					printf("\n");
 				}
 
 				if (percent >= 0) {
-					printf("%s: %s (%d%%)\n", command_name, status_name, percent);
+					printf("\r%s: %s (%d%%)", command_name, status_name, percent);
 				} else {
-					printf("%s: %s\n", command_name, status_name);
+					printf("\r%s: %s", command_name, status_name);
 				}
 			}
 		} else {
