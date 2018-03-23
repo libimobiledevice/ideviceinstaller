@@ -323,7 +323,10 @@ static int zip_get_app_directory(struct zip* zf, char** path)
 static void idevice_event_callback(const idevice_event_t* event, void* userdata)
 {
 	if (event->event == IDEVICE_DEVICE_REMOVE) {
-		is_device_connected = 0;
+		if (!strcmp(udid, event->udid)) {
+			fprintf(stderr, "ideviceinstaller: Device removed\n");
+			is_device_connected = 0;
+		}
 	}
 }
 
@@ -655,6 +658,10 @@ int main(int argc, char **argv)
 	if (IDEVICE_E_SUCCESS != idevice_new(&phone, udid)) {
 		fprintf(stderr, "No iOS device found, is it plugged in?\n");
 		return -1;
+	}
+
+	if (!udid) {
+		idevice_get_udid(phone, &udid);
 	}
 
 	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(phone, &client, "ideviceinstaller")) {
