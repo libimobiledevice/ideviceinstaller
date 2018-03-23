@@ -198,26 +198,14 @@ static void status_cb(plist_t command, plist_t status, void *unused)
 		}
 
 		/* clean up */
-		if (error_name)
-			free(error_name);
+		free(error_name);
+		free(error_description);
 
-		if (error_description)
-			free(error_description);
+		free(last_status);
+		last_status = status_name;
 
-		if (last_status) {
-			free(last_status);
-			last_status = NULL;
-		}
-
-		if (status_name) {
-			last_status = strdup(status_name);
-			free(status_name);
-		}
-
-		if (command_name) {
-			free(command_name);
-			command_name = NULL;
-		}
+		free(command_name);
+		command_name = NULL;
 	} else {
 		fprintf(stderr, "ERROR: %s was called with invalid arguments!\n", __func__);
 	}
@@ -300,7 +288,7 @@ static int zip_get_app_directory(struct zip* zf, char** path)
 
 				len = p - name + 1;
 
-				if (*path != NULL) {
+				if (path != NULL) {
 					free(*path);
 					*path = NULL;
 				}
@@ -640,7 +628,7 @@ static void afc_upload_dir(afc_client_t afc, const char* path, const char* afcpa
 
 int main(int argc, char **argv)
 {
-	idevice_t phone = NULL;
+	idevice_t device = NULL;
 	lockdownd_client_t client = NULL;
 	instproxy_client_t ipc = NULL;
 	instproxy_error_t err;
@@ -655,16 +643,16 @@ int main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (IDEVICE_E_SUCCESS != idevice_new(&phone, udid)) {
+	if (IDEVICE_E_SUCCESS != idevice_new(&device, udid)) {
 		fprintf(stderr, "No iOS device found, is it plugged in?\n");
 		return -1;
 	}
 
 	if (!udid) {
-		idevice_get_udid(phone, &udid);
+		idevice_get_udid(device, &udid);
 	}
 
-	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(phone, &client, "ideviceinstaller")) {
+	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(device, &client, "ideviceinstaller")) {
 		fprintf(stderr, "Could not connect to lockdownd. Exiting.\n");
 		goto leave_cleanup;
 	}
@@ -677,7 +665,7 @@ int main(int argc, char **argv)
 		goto leave_cleanup;
 	}
 
-	np_error_t nperr = np_client_new(phone, service, &np);
+	np_error_t nperr = np_client_new(device, service, &np);
 
 	if (service) {
 		lockdownd_service_descriptor_free(service);
@@ -708,7 +696,7 @@ run_again:
 		goto leave_cleanup;
 	}
 
-	err = instproxy_client_new(phone, service, &ipc);
+	err = instproxy_client_new(device, service, &ipc);
 
 	if (service) {
 		lockdownd_service_descriptor_free(service);
@@ -722,10 +710,9 @@ run_again:
 
 	setbuf(stdout, NULL);
 
-	if (last_status) {
-		free(last_status);
-		last_status = NULL;
-	}
+	free(last_status);
+	last_status = NULL;
+
 	notification_expected = 0;
 
 	if (cmd == CMD_LIST_APPS) {
@@ -808,9 +795,7 @@ run_again:
 		uint64_t af = 0;
 		char buf[8192];
 
-		if (service) {
-			lockdownd_service_descriptor_free(service);
-		}
+		lockdownd_service_descriptor_free(service);
 		service = NULL;
 
 		if ((lockdownd_start_service(client, "com.apple.afc", &service) !=
@@ -822,7 +807,7 @@ run_again:
 		lockdownd_client_free(client);
 		client = NULL;
 
-		if (afc_client_new(phone, service, &afc) != AFC_E_SUCCESS) {
+		if (afc_client_new(device, service, &afc) != AFC_E_SUCCESS) {
 			fprintf(stderr, "Could not connect to AFC!\n");
 			goto leave_cleanup;
 		}
@@ -1025,9 +1010,7 @@ run_again:
 			} else {
 				fprintf(stderr, "WARNING: could not locate %s in archive!\n", ITUNES_METADATA_PLIST_FILENAME);
 			}
-			if (zbuf) {
-				free(zbuf);
-			}
+			free(zbuf);
 
 			/* determine .app directory in archive */
 			zbuf = NULL;
@@ -1107,9 +1090,7 @@ run_again:
 				fprintf(stderr, "WARNING: could not locate %s in archive!\n", sinfname);
 			}
 			free(sinfname);
-			if (zbuf) {
-				free(zbuf);
-			}
+			free(zbuf);
 
 			/* copy archive to device */
 			pkgname = NULL;
@@ -1312,7 +1293,7 @@ run_again:
 			lockdownd_client_free(client);
 			client = NULL;
 
-			if (afc_client_new(phone, service, &afc) != AFC_E_SUCCESS) {
+			if (afc_client_new(device, service, &afc) != AFC_E_SUCCESS) {
 				fprintf(stderr, "Could not connect to AFC!\n");
 				goto leave_cleanup;
 			}
@@ -1444,7 +1425,7 @@ run_again:
 				cmd = CMD_REMOVE_ARCHIVE;
 				free(options);
 				options = NULL;
-				if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(phone, &client, "ideviceinstaller")) {
+				if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(device, &client, "ideviceinstaller")) {
 					fprintf(stderr, "Could not connect to lockdownd. Exiting.\n");
 					goto leave_cleanup;
 				}
@@ -1466,41 +1447,23 @@ run_again:
 		goto leave_cleanup;
 	}
 
-	if (client) {
-		/* not needed anymore */
-		lockdownd_client_free(client);
-		client = NULL;
-	}
+	/* not needed anymore */
+	lockdownd_client_free(client);
+	client = NULL;
 
 	idevice_wait_for_command_to_complete();
 
 leave_cleanup:
-	if (bundleidentifier) {
-		free(bundleidentifier);
-	}
-	if (np) {
-		np_client_free(np);
-	}
-	if (ipc) {
-		instproxy_client_free(ipc);
-	}
-	if (afc) {
-		afc_client_free(afc);
-	}
-	if (client) {
-		lockdownd_client_free(client);
-	}
-	idevice_free(phone);
+	np_client_free(np);
+	instproxy_client_free(ipc);
+	afc_client_free(afc);
+	lockdownd_client_free(client);
+	idevice_free(device);
 
-	if (udid) {
-		free(udid);
-	}
-	if (appid) {
-		free(appid);
-	}
-	if (options) {
-		free(options);
-	}
+	free(udid);
+	free(appid);
+	free(options);
+	free(bundleidentifier);
 
 	if (err_occurred && !res) {
 		res = 128;
