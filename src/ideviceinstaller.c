@@ -958,6 +958,52 @@ run_again:
 			printf("Uploading %s package contents... ", basename(appid));
 			afc_upload_dir(afc, appid, pkgname);
 			printf("DONE.\n");
+
+                       /* extract the CFBundleIdentifier from the package */
+
+                       /* construct full filename to Info.plist */
+                       char *filename = (char*)malloc(strlen(appid)+10+1);
+                       strcpy(filename, appid);
+                       strcat(filename, "/Info.plist");
+
+                       struct stat st;
+                       FILE *fp = NULL;
+
+                       if (stat(filename, &st) == -1 || (fp = fopen(filename, "r")) == NULL) {
+                               fprintf(stderr, "ERROR: could not locate %s in app!\n", filename);
+                               free(filename);
+                               goto leave_cleanup;
+                       }
+                       size_t filesize = st.st_size;
+                       char *ibuf = malloc(filesize * sizeof(char));
+                       size_t amount = fread(ibuf, 1, filesize, fp);
+                       if (amount != filesize) {
+                               fprintf(stderr, "ERROR: could not read %ld bytes from %s\n", filesize, filename);
+                               free(filename);
+                               goto leave_cleanup;
+                       }
+                       fclose(fp);
+                       free(filename);
+
+                       plist_t info = NULL;
+                       if (memcmp(ibuf, "bplist00", 8) == 0) {
+                               plist_from_bin(ibuf, filesize, &info);
+                       } else {
+                               plist_from_xml(ibuf, filesize, &info);
+                       }
+                       free(ibuf);
+
+                       if (!info) {
+                               fprintf(stderr, "ERROR: could not parse Info.plist!\n");
+                               goto leave_cleanup;
+                       }
+
+                       plist_t bname = plist_dict_get_item(info, "CFBundleIdentifier");
+                       if (bname) {
+                               plist_get_string_val(bname, &bundleidentifier);
+                       }
+                       plist_free(info);
+                       info = NULL;
 		} else {
 			zf = zip_open(appid, 0, &errp);
 			if (!zf) {
