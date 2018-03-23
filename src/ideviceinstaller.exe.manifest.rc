@@ -1,0 +1,7 @@
+#include <winuser.h>
+#define IDR_MANIFEST 1 // 2 for a DLL
+
+IDR_MANIFEST RT_MANIFEST MOVEABLE PURE
+{
+    "<assembly xmlns='urn:schemas-microsoft-com:asm.v1' manifestVersion='1.0'>       <asmv3:trustInfo xmlns:asmv3='urn:schemas-microsoft-com:asm.v3'><asmv3:security><asmv3:requestedPrivileges><asmv3:requestedExecutionLevel level='asInvoker' uiAccess='false' /></asmv3:requestedPrivileges></asmv3:security></asmv3:trustInfo></assembly>"
+}
