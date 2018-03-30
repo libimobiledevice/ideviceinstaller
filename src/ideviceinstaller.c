@@ -149,12 +149,6 @@ static void status_cb(plist_t command, plist_t status, void *unused)
 		char *status_name = NULL;
 		instproxy_status_get_name(status, &status_name);
 
-		if (status_name) {
-			if (!strcmp(status_name, "Complete")) {
-				command_completed = 1;
-			}
-		}
-
 		/* get error if any */
 		char* error_name = NULL;
 		char* error_description = NULL;
@@ -186,6 +180,11 @@ static void status_cb(plist_t command, plist_t status, void *unused)
 					printf("\r%s: %s (%d%%)", command_name, status_name, percent);
 				} else {
 					printf("\r%s: %s", command_name, status_name);
+				}
+				
+				if (!strcmp(status_name, "Complete")) {
+					command_completed = 1;
+					printf("\n");
 				}
 			}
 		} else {
