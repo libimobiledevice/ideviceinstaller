@@ -187,6 +187,9 @@ static void status_cb(plist_t command, plist_t status, void *unused)
 				} else {
 					printf("\r%s: %s", command_name, status_name);
 				}
+				if (command_completed) {
+					printf("\n");
+				}
 			}
 		} else {
 			/* report error to the user */
