@@ -1,21 +1,17 @@
+environment:
+  VCPKG_ROOT: C:\tools\vcpkg-libimobiledevice
+
 before_build:
-  - nuget restore
+  - vcpkg version
+  - git clone -q --depth 1 -b ports/libimobiledevice https://github.com/libimobiledevice-win32/vcpkg %VCPKG_ROOT%
+  - cmd: "%VCPKG_ROOT%\\bootstrap-vcpkg.bat"
+  - cmd: "%VCPKG_ROOT%\\vcpkg version"
+  - cmd: "%VCPKG_ROOT%\\vcpkg integrate install"
+  - cmd: "%VCPKG_ROOT%\\vcpkg install libimobiledevice:x86-windows libzip:x86-windows"
+  - cmd: "%VCPKG_ROOT%\\vcpkg install libimobiledevice:x64-windows libzip:x64-windows"
 
 build_script:
   - msbuild ideviceinstaller.sln /p:Configuration=Debug /p:Platform=Win32 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - msbuild ideviceinstaller.sln /p:Configuration=Release /p:Platform=Win32 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - msbuild ideviceinstaller.sln /p:Configuration=Debug /p:Platform=x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - msbuild ideviceinstaller.sln /p:Configuration=Release /p:Platform=x64 /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-
-on_success:
-  - cmd: choco install wget
-  - cmd: wget http://coapp.org/files/CoApp.Tools.Powershell.msi
-  - cmd: start /wait msiexec /qb /i CoApp.Tools.Powershell.msi
-  - ps: .\CreateNuGetPackage.ps1 -Build $ENV:APPVEYOR_BUILD_NUMBER
-  - cmd: appveyor PushArtifact ideviceinstaller.1.1.0.%APPVEYOR_BUILD_NUMBER%.nupkg
-  - cmd: appveyor PushArtifact ideviceinstaller.symbols.1.1.0.%APPVEYOR_BUILD_NUMBER%.nupkg
-  - cmd: appveyor PushArtifact ideviceinstaller.redist.1.1.0.%APPVEYOR_BUILD_NUMBER%.nupkg
-
-nuget:
-  project_feed: true
-  account_feed: true
