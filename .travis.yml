@@ -20,8 +20,10 @@ addons:
   apt:
     packages:
     - libssl-dev
+    - libzip-dev
 
 before_script:
+- if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install libzip; fi
 - wget https://qmcdn.blob.core.windows.net/imobiledevice/libplist-$RID-$LIBPLIST_VERSION.tar.gz
 - wget https://qmcdn.blob.core.windows.net/imobiledevice/libusbmuxd-$RID-$LIBUSBMUXD_VERSION.tar.gz
 - wget https://qmcdn.blob.core.windows.net/imobiledevice/libimobiledevice-$RID-$LIBIMOBILEDEVICE_VERSION.tar.gz
