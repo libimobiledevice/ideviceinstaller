@@ -32,8 +32,8 @@ before_script:
 - tar -xvzf libusbmuxd-$RID-$LIBUSBMUXD_VERSION.tar.gz -C $HOME/ext
 - tar -xvzf libimobiledevice-$RID-$LIBIMOBILEDEVICE_VERSION.tar.gz -C $HOME/ext
 - find $HOME/ext
-- sed -i 's/\/home\/travis\/out/\/home\/travis\/ext/g' $HOME/ext/lib/pkgconfig/*.pc
-- sed -i 's/\/home\/travis\/out/\/home\/travis\/ext/g' $HOME/ext/lib/*.la
+- LC_CTYPE=C LANG=C find $HOME/ext/lib/pkgconfig/ -name '*.pc' -print0 | xargs -0 sed -i -e 's@/travis/out@/travis/ext@g'
+- LC_CTYPE=C LANG=C find $HOME/ext/lib/ -name '*.la' -print0 | xargs -0 sed -i -e 's@/travis/out@/travis/ext@g'
 
 script:
 - export CFLAGS=-I$HOME/ext/include
