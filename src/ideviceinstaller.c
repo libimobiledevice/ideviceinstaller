@@ -36,9 +36,9 @@
 
 #ifdef _MSC_VER
 #include "asprintf.h"
-#include "libgen.h"
 #endif
 
+#include "libgen.h"
 #include <getopt.h>
 #include <errno.h>
 #include <time.h>
