@@ -38,7 +38,7 @@
 #include "asprintf.h"
 #endif
 
-#if !defined(basename)
+#ifndef __GNUC__
 #include "libgen.h"
 #endif
 

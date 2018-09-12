@@ -41,7 +41,6 @@ script:
 - export LDFLAGS=-L$HOME/ext/lib
 - pkg-config --print-errors --variable=prefix libplist
 - pkg-config --print-errors --variable=prefix libusbmuxd
-- pkg-config --print-errors --variable=prefix libimobiledevice
 - ./autogen.sh --prefix=$HOME/out
 - make
 
