@@ -38,7 +38,10 @@
 #include "asprintf.h"
 #endif
 
+#if !defined(basename)
 #include "libgen.h"
+#endif
+
 #include <getopt.h>
 #include <errno.h>
 #include <time.h>
