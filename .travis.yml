@@ -1,29 +1,52 @@
-language: cpp
+dist: trusty
+osx_image: xcode9.2
+
+matrix:
+  include:
+    - os: osx
+      env: TARGET=x86_64-apple-darwin RID=osx-x64 RUN_TESTS=yes CROSS=no CREATE_DEB=no
+    - os: linux
+      env: TARGET=x86_64-linux-gnu RID=linux-x64 RUN_TESTS=yes CROSS=no CREATE_DEB=yes
+
+language: c
+
+env:
+  global:
+  - LIBPLIST_VERSION=2.0.1-157
+  - LIBUSBMUXD_VERSION=1.1.0-81
+  - LIBIMOBILEDEVICE_VERSION=1.2.1-138
+
 addons:
   apt:
     packages:
     - libssl-dev
+
 before_script:
-- wget https://github.com/libimobiledevice-win32/libplist/releases/download/1.12-gcc/libplist.tar.gz
-- wget https://github.com/libimobiledevice-win32/libusbmuxd/releases/download/1.0.10-gcc/libusbmuxd.tar.gz
+- wget https://qmcdn.blob.core.windows.net/imobiledevice/libplist-$RID-$LIBPLIST_VERSION.tar.gz
+- wget https://qmcdn.blob.core.windows.net/imobiledevice/libusbmuxd-$RID-$LIBUSBMUXD_VERSION.tar.gz
+- wget https://qmcdn.blob.core.windows.net/imobiledevice/libimobiledevice-$RID-$LIBIMOBILEDEVICE_VERSION.tar.gz
 - mkdir $HOME/ext
-- tar -xvzf libplist.tar.gz -C $HOME/ext
-- tar -xvzf libusbmuxd.tar.gz -C $HOME/ext
+- tar -xvzf libplist-$RID-$LIBPLIST_VERSION.tar.gz -C $HOME/ext
+- tar -xvzf libusbmuxd-$RID-$LIBUSBMUXD_VERSION.tar.gz -C $HOME/ext
+- tar -xvzf libimobiledevice-$RID-$LIBIMOBILEDEVICE_VERSION.tar.gz -C $HOME/ext
 - find $HOME/ext
 - sed -i 's/\/home\/travis\/out/\/home\/travis\/ext/g' $HOME/ext/lib/pkgconfig/*.pc
 - sed -i 's/\/home\/travis\/out/\/home\/travis\/ext/g' $HOME/ext/lib/*.la
+
 script:
 - export CFLAGS=-I$HOME/ext/include
 - export PKG_CONFIG_PATH=$HOME/ext/lib/pkgconfig:$PKG_CONFIG_PATH
 - export LDFLAGS=-L$HOME/ext/lib
 - pkg-config --print-errors --variable=prefix libplist
 - pkg-config --print-errors --variable=prefix libusbmuxd
-- "./autogen.sh"
-- "./configure --prefix=$HOME/out"
+- pkg-config --print-errors --variable=prefix libimobiledevice
+- ./autogen.sh --prefix=$HOME/out
 - make
+
 after_success:
 - make install
 - tar -zcvf libimobiledevice.tar.gz -C $HOME/out .
+
 deploy:
   provider: releases
   file: libimobiledevice.tar.gz
