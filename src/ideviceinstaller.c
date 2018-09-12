@@ -38,7 +38,11 @@
 #include "asprintf.h"
 #endif
 
-#ifndef __GNUC__
+#ifdef __APPLE__
+#include "libgen.h"
+#endif
+
+#ifdef _MSC_VER
 #include "libgen.h"
 #endif
 
