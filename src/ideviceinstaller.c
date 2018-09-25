@@ -347,8 +347,7 @@ static void idevice_wait_for_command_to_complete()
 
 static int str_is_udid(const char* str)
 {
-	const char allowed[] = "0123456789abcdefABCDEF";
-
+	
 	/* handle NULL case */
 	if (str == NULL)
 		return -1;
@@ -356,18 +355,35 @@ static int str_is_udid(const char* str)
 	int length = strlen(str);
 
 	/* verify length */
-	if (length != 40)
-		return -1;
-
-	/* check for invalid characters */
-	while(length--) {
-		/* invalid character in udid? */
-		if (strchr(allowed, str[length]) == NULL) {
-			return -1;
+	if (length == 40) {
+		const char allowed[] = "0123456789abcdefABCDEF";
+		/* check for invalid characters */
+		while(length--) {
+			/* invalid character in udid? */
+			if (strchr(allowed, str[length]) == NULL) {
+				return -1;
+			}
 		}
+
+		return 0;
+	} else if (length == 25 && strchr("-", str[8]) != NULL) {
+		const char allowed[] = "0123456789ABCDEF";
+
+		while(length--) {
+			if (length == 8) {
+				continue;
+			}
+			/* invalid character in udid? */
+			if (strchr(allowed, str[length]) == NULL) {
+				return -1;
+			}
+		}
+
+		return 0;
+	} else {
+		return -1;
 	}
 
-	return 0;
 }
 
 static void print_usage(int argc, char **argv)
