@@ -382,10 +382,9 @@ static int str_is_udid(const char* str)
 		}
 
 		return 0;
-	} else {
-		return -1;
 	}
 
+	return -1;
 }
 
 static void print_usage(int argc, char **argv)
