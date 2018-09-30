@@ -55,6 +55,8 @@
 
 const char PKG_PATH[] = "PublicStaging";
 const char APPARCH_PATH[] = "ApplicationArchives";
+const int UDID_LENGTH_PRE_FALL_2018 = 40;
+const int UDID_LENGTH_POST_FALL_2018 = 25;
 
 char *udid = NULL;
 char *options = NULL;
@@ -347,8 +349,7 @@ static void idevice_wait_for_command_to_complete()
 
 static int str_is_udid(const char* str)
 {
-	const char allowed[] = "0123456789abcdefABCDEF";
-
+	
 	/* handle NULL case */
 	if (str == NULL)
 		return -1;
@@ -356,18 +357,34 @@ static int str_is_udid(const char* str)
 	int length = strlen(str);
 
 	/* verify length */
-	if (length != 40)
-		return -1;
-
-	/* check for invalid characters */
-	while(length--) {
-		/* invalid character in udid? */
-		if (strchr(allowed, str[length]) == NULL) {
-			return -1;
+	if (length == UDID_LENGTH_PRE_FALL_2018) {
+		const char allowed[] = "0123456789abcdefABCDEF";
+		/* check for invalid characters */
+		while(length--) {
+			/* invalid character in udid? */
+			if (strchr(allowed, str[length]) == NULL) {
+				return -1;
+			}
 		}
+
+		return 0;
+	} else if (length == UDID_LENGTH_POST_FALL_2018 && strchr("-", str[8]) != NULL) {
+		const char allowed[] = "0123456789ABCDEF";
+
+		while(length--) {
+			if (length == 8) {
+				continue;
+			}
+			/* invalid character in udid? */
+			if (strchr(allowed, str[length]) == NULL) {
+				return -1;
+			}
+		}
+
+		return 0;
 	}
 
-	return 0;
+	return -1;
 }
 
 static void print_usage(int argc, char **argv)
@@ -378,7 +395,7 @@ static void print_usage(int argc, char **argv)
 	printf("Usage: %s OPTIONS\n", (name ? name + 1 : argv[0]));
 	printf("Manage apps on iOS devices.\n\n");
 	printf
-		("  -u, --udid UDID\tTarget specific device by its 40-digit device UDID.\n"
+		("  -u, --udid UDID\tTarget specific device by its 40-digit or 25-digit (iPhone XS/XS Max/Xr) device UDID.\n"
 		 "  -l, --list-apps\tList apps, possible options:\n"
 		 "       -o list_user\t- list user apps only (this is the default)\n"
 		 "       -o list_system\t- list system apps only\n"
