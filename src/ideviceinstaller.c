@@ -55,6 +55,8 @@
 
 const char PKG_PATH[] = "PublicStaging";
 const char APPARCH_PATH[] = "ApplicationArchives";
+const int UDID_LENGTH_PRE_FALL_2018 = 40;
+const int UDID_LENGTH_POST_FALL_2018 = 25;
 
 char *udid = NULL;
 char *options = NULL;
@@ -355,7 +357,7 @@ static int str_is_udid(const char* str)
 	int length = strlen(str);
 
 	/* verify length */
-	if (length == 40) {
+	if (length == UDID_LENGTH_PRE_FALL_2018) {
 		const char allowed[] = "0123456789abcdefABCDEF";
 		/* check for invalid characters */
 		while(length--) {
@@ -366,7 +368,7 @@ static int str_is_udid(const char* str)
 		}
 
 		return 0;
-	} else if (length == 25 && strchr("-", str[8]) != NULL) {
+	} else if (length == UDID_LENGTH_POST_FALL_2018 && strchr("-", str[8]) != NULL) {
 		const char allowed[] = "0123456789ABCDEF";
 
 		while(length--) {
