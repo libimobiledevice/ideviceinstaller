@@ -345,31 +345,6 @@ static void idevice_wait_for_command_to_complete()
 	idevice_event_unsubscribe();
 }
 
-static int str_is_udid(const char* str)
-{
-	const char allowed[] = "0123456789abcdefABCDEF";
-
-	/* handle NULL case */
-	if (str == NULL)
-		return -1;
-
-	int length = strlen(str);
-
-	/* verify length */
-	if (length != 40)
-		return -1;
-
-	/* check for invalid characters */
-	while(length--) {
-		/* invalid character in udid? */
-		if (strchr(allowed, str[length]) == NULL) {
-			return -1;
-		}
-	}
-
-	return 0;
-}
-
 static void print_usage(int argc, char **argv)
 {
 	char *name = NULL;
@@ -378,7 +353,7 @@ static void print_usage(int argc, char **argv)
 	printf("Usage: %s OPTIONS\n", (name ? name + 1 : argv[0]));
 	printf("Manage apps on iOS devices.\n\n");
 	printf
-		("  -u, --udid UDID\tTarget specific device by its 40-digit device UDID.\n"
+		("  -u, --udid UDID\tTarget specific device by UDID.\n"
 		 "  -l, --list-apps\tList apps, possible options:\n"
 		 "       -o list_user\t- list user apps only (this is the default)\n"
 		 "       -o list_system\t- list system apps only\n"
@@ -454,19 +429,12 @@ static void parse_opts(int argc, char **argv)
 			print_usage(argc, argv);
 			exit(0);
 		case 'u':
-			if (str_is_udid(optarg) == 0) {
-				udid = strdup(optarg);
-				break;
-			}
-			if (strchr(optarg, '.') != NULL) {
-				fprintf(stderr, "WARNING: Using \"-u\" for \"--uninstall\" is deprecated. Please use \"-U\" instead.\n");
-				cmd = CMD_UNINSTALL;
-				appid = strdup(optarg);
-			} else {
-				printf("ERROR: Invalid UDID specified\n");
+			if (!*optarg) {
+				printf("ERROR: UDID must not be empty!\n");
 				print_usage(argc, argv);
 				exit(2);
 			}
+			udid = strdup(optarg);
 			break;
 		case 'l':
 			cmd = CMD_LIST_APPS;
@@ -476,11 +444,6 @@ static void parse_opts(int argc, char **argv)
 			appid = strdup(optarg);
 			break;
 		case 'U':
-			if (str_is_udid(optarg) == 0) {
-				fprintf(stderr, "WARNING: Using \"-U\" for \"--udid\" is deprecated. Please use \"-u\" instead.\n");
-				udid = strdup(optarg);
-				break;
-			}
 			cmd = CMD_UNINSTALL;
 			appid = strdup(optarg);
 			break;
