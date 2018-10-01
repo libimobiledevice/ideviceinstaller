@@ -1,0 +1,183 @@
+variables:
+  libplistBuild: 56
+  libplistPipeline: 2
+  libusbmuxdBuild: 57
+  libusbmuxdPipeline: 3
+  libimobiledeviceBuild: 66
+  libimobiledevicePipeline: 4
+
+jobs:
+- job: windows
+  strategy:
+    maxParallel: 2
+    matrix:
+      x64:
+        BUILD_ARCH: x64
+        PLATFORM: x64
+        RID: win7-x64
+      x86:
+        BUILD_ARCH: x86
+        PLATFORM: Win32
+        RID: win7-x86
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+  - script: |
+      git clone https://github.com/microsoft/vcpkg
+      vcpkg\bootstrap-vcpkg.bat
+    displayName: Install vcpkg
+  - script: |
+      vcpkg\vcpkg version
+      vcpkg\vcpkg integrate install
+      set VCPKG_BUILD_TYPE=release
+      vcpkg\vcpkg install libplist:%BUILD_ARCH%-windows libusbmuxd:%BUILD_ARCH%-windows libimobiledevice:%BUILD_ARCH%-windows --head
+      vcpkg\vcpkg install libzip:%BUILD_ARCH%-windows
+    displayName: Install native dependencies
+  - task: MSBuild@1
+    inputs:
+      solution: 'ideviceinstaller.sln' 
+      platform: $(PLATFORM)
+      configuration: Release
+    displayName: 'Release build'
+  - task: MSBuild@1
+    inputs:
+      solution: 'ideviceinstaller.sln' 
+      platform: $(PLATFORM)
+      configuration: Debug
+    displayName: 'Debug build'
+  - script: |
+      mkdir %BUILD_ARTIFACTSTAGINGDIRECTORY%\ideviceinstaller\%RID%\bin\
+      copy %PLATFORM%\Release\*.exe %BUILD_ARTIFACTSTAGINGDIRECTORY%\ideviceinstaller\%RID%\bin\
+      copy vcpkg\installed\%BUILD_ARCH%-windows\bin\zip.dll %BUILD_ARTIFACTSTAGINGDIRECTORY%\ideviceinstaller\%RID%\bin\
+      copy vcpkg\installed\%BUILD_ARCH%-windows\bin\zlib1.dll %BUILD_ARTIFACTSTAGINGDIRECTORY%\ideviceinstaller\%RID%\bin\
+    displayName: 'Install'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)/ideviceinstaller/' 
+      artifactName: 'ideviceinstaller' 
+      publishLocation: 'Container'
+    displayName: Publish
+
+- job: macos
+  pool:
+    vmImage: 'xcode9-macos10.13'
+  variables:
+    TARGET: x86_64-apple-darwin
+    RID: osx-x64
+  steps:
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'specific'
+      project: 'imobiledevice-net'
+      pipeline: $(libplistPipeline)
+      buildVersionToDownload: 'specific'
+      buildId: $(libplistBuild)
+      downloadType: 'single'
+      artifactName: 'libplist'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: 'Download libplist artifacts'
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'specific'
+      project: 'imobiledevice-net'
+      pipeline: $(libusbmuxdPipeline)
+      buildVersionToDownload: 'specific'
+      buildId: $(libusbmuxdBuild)
+      downloadType: 'single'
+      artifactName: 'libusbmuxd'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: 'Download libusbmuxd artifacts'
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'specific'
+      project: 'imobiledevice-net'
+      pipeline: $(libimobiledevicePipeline)
+      buildVersionToDownload: 'specific'
+      buildId: $(libimobiledeviceBuild)
+      downloadType: 'single'
+      artifactName: 'libimobiledevice'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: 'Download libimobiledevice artifacts'
+  - script: |
+      brew install autoconf automake libtool pkg-config openssl libzip
+    displayName: Install autotools, openSSL
+  - script: |
+      export PKG_CONFIG_PATH="$SYSTEM_ARTIFACTSDIRECTORY/libplist/$RID/lib/pkgconfig:$PKG_CONFIG_PATH"
+      export PKG_CONFIG_PATH="$SYSTEM_ARTIFACTSDIRECTORY/libusbmuxd/$RID/lib/pkgconfig:$PKG_CONFIG_PATH"
+      export PKG_CONFIG_PATH="$SYSTEM_ARTIFACTSDIRECTORY/libimobiledevice/$RID/lib/pkgconfig:$PKG_CONFIG_PATH"
+      export PKG_CONFIG_PATH="$(brew --prefix)/opt/openssl/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+      ./autogen.sh --prefix=$BUILD_ARTIFACTSTAGINGDIRECTORY/ideviceinstaller/$RID --host=$TARGET
+      make
+    displayName: Build
+  - script: |
+      make install
+    displayName: Install
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)/ideviceinstaller' 
+      artifactName: 'ideviceinstaller' 
+      publishLocation: 'Container'
+    displayName: Publish
+
+- job: linux
+  variables:
+    TARGET: x86_64-unknown-linux-gnu
+    RID: ubuntu.16.04-x64
+    CFLAGS: -fPIC
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'specific'
+      project: 'imobiledevice-net'
+      pipeline: $(libplistPipeline)
+      buildVersionToDownload: 'specific'
+      buildId: $(libplistBuild)
+      downloadType: 'single'
+      artifactName: 'libplist'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: 'Download libplist artifacts'
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'specific'
+      project: 'imobiledevice-net'
+      pipeline: $(libusbmuxdPipeline)
+      buildVersionToDownload: 'specific'
+      buildId: $(libusbmuxdBuild)
+      downloadType: 'single'
+      artifactName: 'libusbmuxd'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: 'Download libusbmuxd artifacts'
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'specific'
+      project: 'imobiledevice-net'
+      pipeline: $(libimobiledevicePipeline)
+      buildVersionToDownload: 'specific'
+      buildId: $(libimobiledeviceBuild)
+      downloadType: 'single'
+      artifactName: 'libimobiledevice'
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: 'Download libimobiledevice artifacts'
+  - script: |
+      sudo apt-get install -y libssl-dev libzip-dev
+    displayName: Install autotools, openSSL
+  - script: |
+      export PKG_CONFIG_PATH="$SYSTEM_ARTIFACTSDIRECTORY/libplist/$RID/lib/pkgconfig:$PKG_CONFIG_PATH"
+      export PKG_CONFIG_PATH="$SYSTEM_ARTIFACTSDIRECTORY/libusbmuxd/$RID/lib/pkgconfig:$PKG_CONFIG_PATH"
+      export PKG_CONFIG_PATH="$SYSTEM_ARTIFACTSDIRECTORY/libimobiledevice/$RID/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+      ./autogen.sh --prefix=$BUILD_ARTIFACTSTAGINGDIRECTORY/ideviceinstaller/$RID --host=$TARGET
+      make
+    displayName: Build
+  - script: |
+      make install
+    displayName: Install
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)/ideviceinstaller'
+      artifactName: 'ideviceinstaller' 
+      publishLocation: 'Container'
+    displayName: Publish
