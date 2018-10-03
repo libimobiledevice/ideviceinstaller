@@ -22,8 +22,4 @@ for f in $INSTALLDIR/bin/* $INSTALLDIR/lib/*.dylib; do
    otool -L $f
 done
 
-libcrypto=`otool -L $INSTALLDIR/lib/libssl.1.0.0.dylib | tail -n +2 | grep "libcrypto" | awk -F' ' '{ print $1 }'`
-install_name_tool -change $libcrypto @loader_path/libcrypto.1.0.0.dylib $HOME/out/lib/libssl.1.0.0.dylib
-
-install_name_tool -change /usr/local/opt/openssl/lib/libssl.1.0.0.dylib @loader_path/libssl.1.0.0.dylib $INSTALLDIR/lib/libimobiledevice.6.dylib
-install_name_tool -change /usr/local/opt/openssl/lib/libcrypto.1.0.0.dylib @loader_path/libcrypto.1.0.0.dylib $INSTALLDIR/lib/libimobiledevice.6.dylib
+install_name_tool -change /usr/local/opt/libzip/lib/libzip.5.dylib @loader_path/libzip.5.dylib $INSTALLDIR/lib/libideviceactivation.2.dylib

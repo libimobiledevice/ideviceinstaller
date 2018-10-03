@@ -113,6 +113,8 @@ jobs:
   - script: |
       make install
 
+      cp /usr/local/opt/libzip/lib/libzip.5.dylib $SYSTEM_ARTIFACTSDIRECTORY/ideviceinstaller/$RID/lib
+
       export INSTALLDIR=$SYSTEM_ARTIFACTSDIRECTORY/ideviceinstaller/$RID
       ./build/patchdylib.sh
 
@@ -183,6 +185,7 @@ jobs:
     displayName: Build
   - script: |
       make install
+
       export INSTALLDIR=$SYSTEM_ARTIFACTSDIRECTORY/ideviceinstaller/$RID
       ./build/install-patchelf.sh
       ./build/run-patchelf.sh
