@@ -175,6 +175,9 @@ jobs:
       export PKG_CONFIG_PATH="$SYSTEM_ARTIFACTSDIRECTORY/libusbmuxd/$RID/lib/pkgconfig:$PKG_CONFIG_PATH"
       export PKG_CONFIG_PATH="$SYSTEM_ARTIFACTSDIRECTORY/libimobiledevice/$RID/lib/pkgconfig:$PKG_CONFIG_PATH"
 
+      cp $SYSTEM_ARTIFACTSDIRECTORY/libusbmuxd/$RID/lib/libusbmuxd.so $SYSTEM_ARTIFACTSDIRECTORY/ideviceinstaller/$RID/lib
+      cp $SYSTEM_ARTIFACTSDIRECTORY/libplist/$RID/lib/libplist.so $SYSTEM_ARTIFACTSDIRECTORY/ideviceinstaller/$RID/lib
+
       ./autogen.sh --prefix=$BUILD_ARTIFACTSTAGINGDIRECTORY/ideviceinstaller/$RID --host=$TARGET
       make
     displayName: Build
