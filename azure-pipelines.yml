@@ -1,9 +1,9 @@
 variables:
-  libplistBuild: 56
+  libplistBuild: 209
   libplistPipeline: 2
-  libusbmuxdBuild: 57
+  libusbmuxdBuild: 230
   libusbmuxdPipeline: 3
-  libimobiledeviceBuild: 66
+  libimobiledeviceBuild: 232
   libimobiledevicePipeline: 4
 
 jobs:
@@ -112,6 +112,12 @@ jobs:
     displayName: Build
   - script: |
       make install
+
+      export INSTALLDIR=$SYSTEM_ARTIFACTSDIRECTORY/ideviceinstaller/$RID
+      ./build/patchdylib.sh
+
+      echo $BUILD_REPOSITORY_URI\n >> $BUILD_ARTIFACTSTAGINGDIRECTORY/ideviceinstaller/$RID/gitinfo
+      echo $BUILD_SOURCEVERSION >> $BUILD_ARTIFACTSTAGINGDIRECTORY/ideviceinstaller/$RID/gitinfo
     displayName: Install
   - task: PublishBuildArtifacts@1
     inputs:
@@ -174,6 +180,12 @@ jobs:
     displayName: Build
   - script: |
       make install
+      export INSTALLDIR=$SYSTEM_ARTIFACTSDIRECTORY/ideviceinstaller/$RID
+      ./build/install-patchelf.sh
+      ./build/run-patchelf.sh
+
+      echo $BUILD_REPOSITORY_URI\n >> $BUILD_ARTIFACTSTAGINGDIRECTORY/ideviceinstaller/$RID/gitinfo
+      echo $BUILD_SOURCEVERSION >> $BUILD_ARTIFACTSTAGINGDIRECTORY/ideviceinstaller/$RID/gitinfo
     displayName: Install
   - task: PublishBuildArtifacts@1
     inputs:
