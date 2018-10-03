@@ -23,7 +23,7 @@ jobs:
     vmImage: 'vs2017-win2016'
   steps:
   - script: |
-      git clone https://github.com/microsoft/vcpkg
+      git clone https://github.com/libimobiledevice-win32/vcpkg
       vcpkg\bootstrap-vcpkg.bat
     displayName: Install vcpkg
   - script: |
