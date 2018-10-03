@@ -23,3 +23,4 @@ for f in $INSTALLDIR/bin/* $INSTALLDIR/lib/*.dylib; do
 done
 
 install_name_tool -change /usr/local/opt/libzip/lib/libzip.5.dylib @loader_path/libzip.5.dylib $INSTALLDIR/lib/libideviceactivation.2.dylib
+install_name_tool -change /usr/local/opt/libzip/lib/libzip.5.dylib @loader_path/libzip.5.dylib $INSTALLDIR/bin/ideviceinstaller
