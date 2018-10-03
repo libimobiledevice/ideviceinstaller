@@ -113,7 +113,8 @@ jobs:
   - script: |
       make install
 
-      cp /usr/local/opt/libzip/lib/libzip.5.dylib $SYSTEM_ARTIFACTSDIRECTORY/ideviceinstaller/$RID/lib
+      mkdir $SYSTEM_ARTIFACTSDIRECTORY/ideviceinstaller/$RID/lib
+      cp /usr/local/opt/libzip/lib/libzip.5.dylib $SYSTEM_ARTIFACTSDIRECTORY/ideviceinstaller/$RID/lib/
 
       export INSTALLDIR=$SYSTEM_ARTIFACTSDIRECTORY/ideviceinstaller/$RID
       ./build/patchdylib.sh
