@@ -943,7 +943,7 @@ run_again:
 			char *ibuf = malloc(filesize * sizeof(char));
 			size_t amount = fread(ibuf, 1, filesize, fp);
 			if (amount != filesize) {
-				fprintf(stderr, "ERROR: could not read %ld bytes from %s\n", filesize, filename);
+				fprintf(stderr, "ERROR: could not read %zu bytes from %s\n", filesize, filename);
 				free(filename);
 				res = -1;
 				goto leave_cleanup;
