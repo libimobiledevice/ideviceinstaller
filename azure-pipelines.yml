@@ -1,9 +1,9 @@
 variables:
-  libplistBuild: 209
+  libplistBuild: 281
   libplistPipeline: 2
-  libusbmuxdBuild: 230
+  libusbmuxdBuild: 283
   libusbmuxdPipeline: 3
-  libimobiledeviceBuild: 232
+  libimobiledeviceBuild: 291
   libimobiledevicePipeline: 4
 
 jobs:
@@ -137,6 +137,13 @@ jobs:
   pool:
     vmImage: 'ubuntu-16.04'
   steps:
+  - script: |
+      lsb_release -a
+      sudo apt-get remove -y libssl1.1 ant
+      sudo apt-get install -y software-properties-common
+      sudo add-apt-repository --remove -y ppa:ondrej/php
+      sudo apt-get update
+    displayName: Check Ubuntu version, remove non-standard libssl1.1
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: 'specific'
