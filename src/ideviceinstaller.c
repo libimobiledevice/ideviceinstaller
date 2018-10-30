@@ -926,7 +926,7 @@ run_again:
 			/* extract the CFBundleIdentifier from the package */
 
 			/* construct full filename to Info.plist */
-			char *filename = (char*)malloc(strlen(appid)+10+1);
+			char *filename = (char*)malloc(strlen(appid)+11+1);
 			strcpy(filename, appid);
 			strcat(filename, "/Info.plist");
 
