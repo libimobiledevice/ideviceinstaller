@@ -51,6 +51,39 @@
 
 #include <zip.h>
 
+#ifdef WIN32
+#include <windows.h>
+#define wait_ms(x) Sleep(x)
+#else
+#define wait_ms(x) { struct timespec ts; ts.tv_sec = 0; ts.tv_nsec = x * 1000000; nanosleep(&ts, NULL); }
+#endif
+
+#ifndef HAVE_VASPRINTF
+static int vasprintf(char **PTR, const char *TEMPLATE, va_list AP)
+{
+	int res;
+	char buf[16];
+	res = vsnprintf(buf, 16, TEMPLATE, AP);
+	if (res > 0) {
+		*PTR = (char*)malloc(res+1);
+		res = vsnprintf(*PTR, res+1, TEMPLATE, AP);
+	}
+	return res;
+}
+#endif
+
+#ifndef HAVE_ASPRINTF
+static int asprintf(char **PTR, const char *TEMPLATE, ...)
+{
+	int res;
+	va_list AP;
+	va_start(AP, TEMPLATE);
+	res = vasprintf(PTR, TEMPLATE, AP);
+	va_end(AP);
+	return res;
+}
+#endif
+
 #define ITUNES_METADATA_PLIST_FILENAME "iTunesMetadata.plist"
 
 const char PKG_PATH[] = "PublicStaging";
@@ -323,9 +356,6 @@ static void idevice_event_callback(const idevice_event_t* event, void* userdata)
 
 static void idevice_wait_for_command_to_complete()
 {
-	struct timespec ts;
-	ts.tv_sec = 0;
-	ts.tv_nsec = 50000000;
 	is_device_connected = 1;
 
 	/* subscribe to make sure to exit on device removal */
@@ -334,12 +364,12 @@ static void idevice_wait_for_command_to_complete()
 	/* wait for command to complete */
 	while (wait_for_command_complete && !command_completed && !err_occurred
 		   && is_device_connected) {
-		nanosleep(&ts, NULL);
+		wait_ms(50);
 	}
 
 	/* wait some time if a notification is expected */
 	while (notification_expected && !notified && !err_occurred && is_device_connected) {
-		nanosleep(&ts, NULL);
+		wait_ms(50);
 	}
 
 	idevice_event_unsubscribe();
@@ -530,7 +560,7 @@ static int afc_upload_file(afc_client_t afc, const char* filename, const char* d
 				total += written;
 			}
 			if (total != amount) {
-				fprintf(stderr, "Error: wrote only %d of %zu\n", total, amount);
+				fprintf(stderr, "Error: wrote only %u of %u\n", total, (uint32_t)amount);
 				afc_file_close(afc, af);
 				fclose(f);
 				return -1;
@@ -943,7 +973,7 @@ run_again:
 			char *ibuf = malloc(filesize * sizeof(char));
 			size_t amount = fread(ibuf, 1, filesize, fp);
 			if (amount != filesize) {
-				fprintf(stderr, "ERROR: could not read %ld bytes from %s\n", filesize, filename);
+				fprintf(stderr, "ERROR: could not read %u bytes from %s\n", (uint32_t)filesize, filename);
 				free(filename);
 				res = -1;
 				goto leave_cleanup;
