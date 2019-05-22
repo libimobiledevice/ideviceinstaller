@@ -59,6 +59,8 @@ const char APPARCH_PATH[] = "ApplicationArchives";
 char *udid = NULL;
 char *options = NULL;
 char *appid = NULL;
+char *extsinf = NULL;
+char *extmeta = NULL;
 
 enum cmd_mode {
 	CMD_NONE = 0,
@@ -361,6 +363,8 @@ static void print_usage(int argc, char **argv)
 		 "       -o xml\t\t- print full output as xml plist\n"
 		 "  -i, --install ARCHIVE\tInstall app from package file specified by ARCHIVE.\n"
 		 "                       \tARCHIVE can also be a .ipcc file for carrier bundles.\n"
+		 "  -s, --sinf PATH\tPass a standalone SINF file to use with -i.\n"
+		 "  -m, --metadata PATH\tPass a standalone iTunesMetadata file to use with -i.\n"
 		 "  -U, --uninstall APPID\tUninstall app specified by APPID.\n"
 		 "  -g, --upgrade ARCHIVE\tUpgrade app from package file specified by ARCHIVE.\n"
 		 "  -L, --list-archives\tList archived applications, possible options:\n"
@@ -386,6 +390,8 @@ static void parse_opts(int argc, char **argv)
 		{"udid", 1, NULL, 'u'},
 		{"list-apps", 0, NULL, 'l'},
 		{"install", 1, NULL, 'i'},
+		{"sinf", 1, NULL, 's'},
+		{"metadata", 1, NULL, 'm'},
 		{"uninstall", 1, NULL, 'U'},
 		{"upgrade", 1, NULL, 'g'},
 		{"list-archives", 0, NULL, 'L'},
@@ -399,7 +405,7 @@ static void parse_opts(int argc, char **argv)
 	int c;
 
 	while (1) {
-		c = getopt_long(argc, argv, "hU:li:u:g:La:r:R:o:d", longopts,
+		c = getopt_long(argc, argv, "hU:li:s:m:u:g:La:r:R:o:d", longopts,
 						(int *) 0);
 		if (c == -1) {
 			break;
@@ -442,6 +448,12 @@ static void parse_opts(int argc, char **argv)
 		case 'i':
 			cmd = CMD_INSTALL;
 			appid = strdup(optarg);
+			break;
+		case 's':
+			extsinf = strdup(optarg);
+			break;
+		case 'm':
+			extmeta = strdup(optarg);
 			break;
 		case 'U':
 			cmd = CMD_UNINSTALL;
@@ -590,6 +602,37 @@ static void afc_upload_dir(afc_client_t afc, const char* path, const char* afcpa
 		}
 		closedir(dir);
 	}
+}
+
+static char *buf_from_file(const char *filename, size_t *size)
+{
+	struct stat st;
+	FILE *fp = NULL;
+
+	if (stat(filename, &st) == -1 || (fp = fopen(filename, "r")) == NULL) {
+		return NULL;
+	}
+	size_t filesize = st.st_size;
+	if (filesize == 0) {
+		return NULL;
+	}
+	char *ibuf = malloc(filesize * sizeof(char));
+	if (ibuf == NULL) {
+		return NULL;
+	}
+	size_t amount = fread(ibuf, 1, filesize, fp);
+	if (amount != filesize) {
+		fprintf(stderr, "ERROR: could not read %ld bytes from %s\n", filesize, filename);
+		free(ibuf);
+		return NULL;
+	}
+	fclose(fp);
+
+	if (size) {
+		*size = filesize;
+	}
+
+	return ibuf;
 }
 
 int main(int argc, char **argv)
@@ -979,21 +1022,41 @@ run_again:
 				goto leave_cleanup;
 			}
 
-			/* extract iTunesMetadata.plist from package */
 			char *zbuf = NULL;
 			uint32_t len = 0;
 			plist_t meta_dict = NULL;
-			if (zip_get_contents(zf, ITUNES_METADATA_PLIST_FILENAME, 0, &zbuf, &len) == 0) {
-				meta = plist_new_data(zbuf, len);
-				if (memcmp(zbuf, "bplist00", 8) == 0) {
-					plist_from_bin(zbuf, len, &meta_dict);
+
+			if (extmeta) {
+				size_t flen = 0;
+				zbuf = buf_from_file(extmeta, &flen);
+				if (zbuf && flen) {
+					meta = plist_new_data(zbuf, flen);
+					if (memcmp(zbuf, "bplist00", 8) == 0) {
+						plist_from_bin(zbuf, flen, &meta_dict);
+					} else {
+						plist_from_xml(zbuf, flen, &meta_dict);
+					}
+					free(zbuf);
 				} else {
-					plist_from_xml(zbuf, len, &meta_dict);
+					fprintf(stderr, "WARNING: could not load external iTunesMetadata %s!\n", extmeta);
 				}
-			} else {
-				fprintf(stderr, "WARNING: could not locate %s in archive!\n", ITUNES_METADATA_PLIST_FILENAME);
+				zbuf = NULL;
 			}
-			free(zbuf);
+
+			if (!meta && !meta_dict) {
+				/* extract iTunesMetadata.plist from package */
+				if (zip_get_contents(zf, ITUNES_METADATA_PLIST_FILENAME, 0, &zbuf, &len) == 0) {
+					meta = plist_new_data(zbuf, len);
+					if (memcmp(zbuf, "bplist00", 8) == 0) {
+						plist_from_bin(zbuf, len, &meta_dict);
+					} else {
+						plist_from_xml(zbuf, len, &meta_dict);
+					}
+				} else {
+					fprintf(stderr, "WARNING: could not locate %s in archive!\n", ITUNES_METADATA_PLIST_FILENAME);
+				}
+				free(zbuf);
+			}
 
 			/* determine .app directory in archive */
 			zbuf = NULL;
@@ -1061,24 +1124,38 @@ run_again:
 				goto leave_cleanup;
 			}
 
-			char *sinfname = NULL;
-			if (asprintf(&sinfname, "Payload/%s.app/SC_Info/%s.sinf", bundleexecutable, bundleexecutable) < 0) {
-				fprintf(stderr, "Out of memory!?\n");
-				res = -1;
-				goto leave_cleanup;
+			if (extsinf) {
+				size_t flen = 0;
+				zbuf = buf_from_file(extsinf, &flen);
+				if (zbuf && flen) {
+					sinf = plist_new_data(zbuf, flen);
+					free(zbuf);
+				} else {
+					fprintf(stderr, "WARNING: could not load external SINF %s!\n", extsinf);
+				}
+				zbuf = NULL;
 			}
-			free(bundleexecutable);
 
-			/* extract .sinf from package */
-			zbuf = NULL;
-			len = 0;
-			if (zip_get_contents(zf, sinfname, 0, &zbuf, &len) == 0) {
-				sinf = plist_new_data(zbuf, len);
-			} else {
-				fprintf(stderr, "WARNING: could not locate %s in archive!\n", sinfname);
+			if (!sinf) {
+				char *sinfname = NULL;
+				if (asprintf(&sinfname, "Payload/%s.app/SC_Info/%s.sinf", bundleexecutable, bundleexecutable) < 0) {
+					fprintf(stderr, "Out of memory!?\n");
+					res = -1;
+					goto leave_cleanup;
+				}
+				free(bundleexecutable);
+
+				/* extract .sinf from package */
+				zbuf = NULL;
+				len = 0;
+				if (zip_get_contents(zf, sinfname, 0, &zbuf, &len) == 0) {
+					sinf = plist_new_data(zbuf, len);
+				} else {
+					fprintf(stderr, "WARNING: could not locate %s in archive!\n", sinfname);
+				}
+				free(sinfname);
+				free(zbuf);
 			}
-			free(sinfname);
-			free(zbuf);
 
 			/* copy archive to device */
 			pkgname = NULL;
@@ -1461,8 +1538,10 @@ leave_cleanup:
 	idevice_free(device);
 
 	free(udid);
-	free(appid);
 	free(options);
+	free(appid);
+	free(extsinf);
+	free(extmeta);
 	free(bundleidentifier);
 
 	if (err_occurred && !res) {
