@@ -192,6 +192,17 @@ static void status_cb(plist_t command, plist_t status, void *unused)
 			}
 		}
 
+		/* get bundle identifier (used on iOS 10.3.x to indicate completion) */
+		char* bundle_identifier = NULL;
+		plist_t node = plist_dict_get_item(status, "CFBundleIdentifier");
+		if (node) {
+			plist_get_string_val(node, &bundle_identifier);
+		}
+
+		if (bundle_identifier) {
+			command_completed = 1;
+		}
+
 		/* get error if any */
 		char* error_name = NULL;
 		char* error_description = NULL;
