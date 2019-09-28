@@ -40,6 +40,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifndef WIN32
+#include <signal.h>
+#endif
 
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
@@ -641,6 +644,9 @@ int main(int argc, char **argv)
 	int res = 0;
 	char *bundleidentifier = NULL;
 
+#ifndef WIN32
+	signal(SIGPIPE, SIG_IGN);
+#endif
 	parse_opts(argc, argv);
 
 	argc -= optind;
