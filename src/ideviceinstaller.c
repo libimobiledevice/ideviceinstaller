@@ -415,6 +415,7 @@ static void print_usage(int argc, char **argv)
 		"                    \t\tto before reporting success of operation\n"
 		"  -h, --help\t\tprints usage information\n"
 		"  -d, --debug\t\tenable communication debugging\n"
+		"  -v, --version\t\tprint version information\n"
 		"\n"
 	);
 	printf("Homepage:    <" PACKAGE_URL ">\n");
@@ -437,12 +438,13 @@ static void parse_opts(int argc, char **argv)
 		{ "options", required_argument, NULL, 'o' },
 		{ "notify-wait", no_argument, NULL, 'n' },
 		{ "debug", no_argument, NULL, 'd' },
+		{ "version", no_argument, NULL, 'v' },
 		{ NULL, 0, NULL, 0 }
 	};
 	int c;
 
 	while (1) {
-		c = getopt_long(argc, argv, "hU:li:u:g:La:r:R:o:nd", longopts,
+		c = getopt_long(argc, argv, "hU:li:u:g:La:r:R:o:ndv", longopts,
 						(int *) 0);
 		if (c == -1) {
 			break;
@@ -527,6 +529,9 @@ static void parse_opts(int argc, char **argv)
 		case 'd':
 			idevice_set_debug_level(1);
 			break;
+		case 'v':
+			printf("%s %s\n", PACKAGE_NAME, PACKAGE_VERSION);
+			exit(0);
 		default:
 			print_usage(argc, argv);
 			exit(2);
