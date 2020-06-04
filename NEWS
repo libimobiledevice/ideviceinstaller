@@ -1,3 +1,19 @@
+Version 1.1.1
+~~~~~~~~~~~~~
+
+* Changes:
+  - Bump autoconf requirement to 2.64
+  - Bump libimobiledevice dependency to 1.2.0
+  - Bump libzip dependency to 0.10
+  - Ignore .DS_Store and hidden files when parsing ZIP files
+  - Fix device removal detection triggering on any device unplug
+  - Improve excessive progress output
+  - Return non-zero exit status on errors
+  - Remove length check on UDID argument to support newer devices
+  - Fix win32 build
+  - Add "-n" option to make waiting on install/uninstall notification optional
+  - Ignore SIGPIPE signal
+
 Version 1.1.0
 ~~~~~~~~~~~~~
 
