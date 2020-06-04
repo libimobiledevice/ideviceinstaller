@@ -66,3 +66,12 @@ src/Makefile
 man/Makefile
 ])
 
+echo "
+Configuration for $PACKAGE $VERSION:
+-------------------------------------------
+
+  Install prefix: .........: $prefix
+
+  Now type 'make' to build $PACKAGE $VERSION,
+  and then 'make install' for installation.
+"
