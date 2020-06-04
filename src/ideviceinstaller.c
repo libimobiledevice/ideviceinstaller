@@ -385,34 +385,40 @@ static void print_usage(int argc, char **argv)
 
 	name = strrchr(argv[0], '/');
 	printf("Usage: %s OPTIONS\n", (name ? name + 1 : argv[0]));
-	printf("Manage apps on iOS devices.\n\n");
-	printf
-		("  -u, --udid UDID\tTarget specific device by UDID.\n"
-		 "  -l, --list-apps\tList apps, possible options:\n"
-		 "       -o list_user\t- list user apps only (this is the default)\n"
-		 "       -o list_system\t- list system apps only\n"
-		 "       -o list_all\t- list all types of apps\n"
-		 "       -o xml\t\t- print full output as xml plist\n"
-		 "  -i, --install ARCHIVE\tInstall app from package file specified by ARCHIVE.\n"
-		 "                       \tARCHIVE can also be a .ipcc file for carrier bundles.\n"
-		 "  -U, --uninstall APPID\tUninstall app specified by APPID.\n"
-		 "  -g, --upgrade ARCHIVE\tUpgrade app from package file specified by ARCHIVE.\n"
-		 "  -L, --list-archives\tList archived applications, possible options:\n"
-		 "       -o xml\t\t- print full output as xml plist\n"
-		 "  -a, --archive APPID\tArchive app specified by APPID, possible options:\n"
-		 "       -o uninstall\t- uninstall the package after making an archive\n"
-		 "       -o app_only\t- archive application data only\n"
-		 "       -o docs_only\t- archive documents (user data) only\n"
-		 "       -o copy=PATH\t- copy the app archive to directory PATH when done\n"
-		 "       -o remove\t- only valid when copy=PATH is used: remove after copy\n"
-		 "  -r, --restore APPID\tRestore archived app specified by APPID\n"
-		 "  -R, --remove-archive APPID  Remove app archive specified by APPID\n"
-		 "  -o, --options\t\tPass additional options to the specified command.\n"
-		 "  -n, --notify-wait\t\tWait for app installed/uninstalled notification\n"
-		 "                    \t\tto before reporting success of operation\n"
-		 "  -h, --help\t\tprints usage information\n"
-		 "  -d, --debug\t\tenable communication debugging\n" "\n");
-	printf("Homepage: <http://libimobiledevice.org>\n");
+	printf("\n");
+	printf("Manage apps on iOS devices.\n");
+	printf("\n");
+	printf(
+		"OPTIONS:\n"
+		"  -u, --udid UDID\tTarget specific device by UDID.\n"
+		"  -l, --list-apps\tList apps, possible options:\n"
+		"       -o list_user\t- list user apps only (this is the default)\n"
+		"       -o list_system\t- list system apps only\n"
+		"       -o list_all\t- list all types of apps\n"
+		"       -o xml\t\t- print full output as xml plist\n"
+		"  -i, --install ARCHIVE\tInstall app from package file specified by ARCHIVE.\n"
+		"                       \tARCHIVE can also be a .ipcc file for carrier bundles.\n"
+		"  -U, --uninstall APPID\tUninstall app specified by APPID.\n"
+		"  -g, --upgrade ARCHIVE\tUpgrade app from package file specified by ARCHIVE.\n"
+		"  -L, --list-archives\tList archived applications, possible options:\n"
+		"       -o xml\t\t- print full output as xml plist\n"
+		"  -a, --archive APPID\tArchive app specified by APPID, possible options:\n"
+		"       -o uninstall\t- uninstall the package after making an archive\n"
+		"       -o app_only\t- archive application data only\n"
+		"       -o docs_only\t- archive documents (user data) only\n"
+		"       -o copy=PATH\t- copy the app archive to directory PATH when done\n"
+		"       -o remove\t- only valid when copy=PATH is used: remove after copy\n"
+		"  -r, --restore APPID\tRestore archived app specified by APPID\n"
+		"  -R, --remove-archive APPID  Remove app archive specified by APPID\n"
+		"  -o, --options\t\tPass additional options to the specified command.\n"
+		"  -n, --notify-wait\t\tWait for app installed/uninstalled notification\n"
+		"                    \t\tto before reporting success of operation\n"
+		"  -h, --help\t\tprints usage information\n"
+		"  -d, --debug\t\tenable communication debugging\n"
+		"\n"
+	);
+	printf("Homepage:    <" PACKAGE_URL ">\n");
+	printf("Bug Reports: <" PACKAGE_BUGREPORT ">\n");
 }
 
 static void parse_opts(int argc, char **argv)
