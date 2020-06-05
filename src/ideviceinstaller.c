@@ -112,6 +112,7 @@ int cmd = CMD_NONE;
 
 char *last_status = NULL;
 int wait_for_command_complete = 0;
+int use_network = 0;
 int use_notifier = 0;
 int notification_expected = 0;
 int is_device_connected = 0;
@@ -391,6 +392,7 @@ static void print_usage(int argc, char **argv)
 	printf(
 		"OPTIONS:\n"
 		"  -u, --udid UDID\tTarget specific device by UDID.\n"
+		"  -n, --network\t\tConnect to network device.\n"
 		"  -l, --list-apps\tList apps, possible options:\n"
 		"       -o list_user\t- list user apps only (this is the default)\n"
 		"       -o list_system\t- list system apps only\n"
@@ -411,7 +413,7 @@ static void print_usage(int argc, char **argv)
 		"  -r, --restore APPID\tRestore archived app specified by APPID\n"
 		"  -R, --remove-archive APPID  Remove app archive specified by APPID\n"
 		"  -o, --options\t\tPass additional options to the specified command.\n"
-		"  -n, --notify-wait\t\tWait for app installed/uninstalled notification\n"
+		"  -w, --notify-wait\t\tWait for app installed/uninstalled notification\n"
 		"                    \t\tto before reporting success of operation\n"
 		"  -h, --help\t\tprints usage information\n"
 		"  -d, --debug\t\tenable communication debugging\n"
@@ -427,6 +429,7 @@ static void parse_opts(int argc, char **argv)
 	static struct option longopts[] = {
 		{ "help", no_argument, NULL, 'h' },
 		{ "udid", required_argument, NULL, 'u' },
+		{ "network", no_argument, NULL, 'n' },
 		{ "list-apps", no_argument, NULL, 'l' },
 		{ "install", required_argument, NULL, 'i' },
 		{ "uninstall", required_argument, NULL, 'U' },
@@ -436,7 +439,7 @@ static void parse_opts(int argc, char **argv)
 		{ "restore", required_argument, NULL, 'r' },
 		{ "remove-archive", required_argument, NULL, 'R' },
 		{ "options", required_argument, NULL, 'o' },
-		{ "notify-wait", no_argument, NULL, 'n' },
+		{ "notify-wait", no_argument, NULL, 'w' },
 		{ "debug", no_argument, NULL, 'd' },
 		{ "version", no_argument, NULL, 'v' },
 		{ NULL, 0, NULL, 0 }
@@ -444,7 +447,7 @@ static void parse_opts(int argc, char **argv)
 	int c;
 
 	while (1) {
-		c = getopt_long(argc, argv, "hU:li:u:g:La:r:R:o:ndv", longopts,
+		c = getopt_long(argc, argv, "hU:li:u:g:La:r:R:o:nwdv", longopts,
 						(int *) 0);
 		if (c == -1) {
 			break;
@@ -480,6 +483,9 @@ static void parse_opts(int argc, char **argv)
 				exit(2);
 			}
 			udid = strdup(optarg);
+			break;
+		case 'n':
+			use_network = 1;
 			break;
 		case 'l':
 			cmd = CMD_LIST_APPS;
@@ -523,7 +529,7 @@ static void parse_opts(int argc, char **argv)
 				options = newopts;
 			}
 			break;
-		case 'n':
+		case 'w':
 			use_notifier = 1;
 			break;
 		case 'd':
@@ -663,8 +669,12 @@ int main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (IDEVICE_E_SUCCESS != idevice_new(&device, udid)) {
-		fprintf(stderr, "No iOS device found, is it plugged in?\n");
+	if (IDEVICE_E_SUCCESS != idevice_new_with_options(&device, udid, (use_network) ? IDEVICE_LOOKUP_NETWORK : IDEVICE_LOOKUP_USBMUX)) {
+		if (udid) {
+			fprintf(stderr, "No device found with udid %s.\n", udid);
+		} else {
+			fprintf(stderr, "No device found.\n");
+		}
 		return -1;
 	}
 
