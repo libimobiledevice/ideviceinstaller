@@ -15,8 +15,8 @@ AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 
 # Checks for libraries.
-PKG_CHECK_MODULES(libimobiledevice, libimobiledevice-1.0 >= 1.2.0)
-PKG_CHECK_MODULES(libplist, libplist >= 0.15)
+PKG_CHECK_MODULES(libimobiledevice, libimobiledevice-1.0 >= 1.3.0)
+PKG_CHECK_MODULES(libplist, libplist-2.0 >= 2.2.0)
 PKG_CHECK_MODULES(libzip, libzip >= 0.10)
 
 # Checks for header files.
