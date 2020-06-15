@@ -3,7 +3,6 @@ Version 1.1.1
 
 * Changes:
   - Bump autoconf requirement to 2.64
-  - Bump libimobiledevice dependency to 1.2.0
   - Bump libzip dependency to 0.10
   - Ignore .DS_Store and hidden files when parsing ZIP files
   - Fix device removal detection triggering on any device unplug
@@ -13,6 +12,11 @@ Version 1.1.1
   - Fix win32 build
   - Add "-n" option to make waiting on install/uninstall notification optional
   - Ignore SIGPIPE signal
+  - Add "--network" and "--version" options to ideviceactivation tool
+  - Bump libimobiledevice dependency to 1.3.0
+  - Bump libplist dependency to 2.2.0
+  - Improve README.md with project description, installation, contributing and
+    usage sections
 
 Version 1.1.0
 ~~~~~~~~~~~~~
