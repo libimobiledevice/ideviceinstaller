@@ -57,7 +57,7 @@ First of all attach your device to your machine.
 
 Then simply run:
 ```shell
-idevicerestore --list-apps
+ideviceinstaller --list-apps
 ```
 
 This will print a list of `<appid>` identifiers (bundle identifiers) for use
@@ -65,12 +65,12 @@ with other commands (see further below).
 
 To install an app from a package file use:
 ```shell
-idevicerestore --install <file>
+ideviceinstaller --install <file>
 ```
 
 To uninstall an app with the `<appid>` from the device use:
 ```shell
-idevicerestore --uninstall <appid>
+ideviceinstaller --uninstall <appid>
 ```
 
 Please consult the usage information or manual page for a full documentation of
