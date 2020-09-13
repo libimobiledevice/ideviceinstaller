@@ -144,7 +144,7 @@ static void print_apps(plist_t apps)
 		if (p_bundle_identifier) {
 			plist_get_string_val(p_bundle_identifier, &s_bundle_identifier);
 		}
-		if (!s_bundle_identifier) {
+		if (s_bundle_identifier == NULL) {
 			fprintf(stderr, "ERROR: Failed to get APPID!\n");
 			break;
 		}
@@ -155,13 +155,13 @@ static void print_apps(plist_t apps)
 		if (display_name) {
 			plist_get_string_val(display_name, &s_display_name);
 		}
-		if (!s_display_name) {
+		if (s_display_name == NULL) {
 			s_display_name = strdup(s_bundle_identifier);
 		}
 
 		/* output app details */
 		printf("%s", s_bundle_identifier);
-		if (s_version) {
+		if (s_version != NULL) {
 			printf(", \"%s\"", s_version);
 			free(s_version);
 		}
