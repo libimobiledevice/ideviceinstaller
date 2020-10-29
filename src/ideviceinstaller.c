@@ -139,7 +139,11 @@ static void print_apps(plist_t apps)
 		char *s_display_name = NULL;
 		char *s_version = NULL;
 		plist_t display_name = plist_dict_get_item(app, "CFBundleDisplayName");
-		plist_t version = plist_dict_get_item(app, "CFBundleVersion");
+		plist_t version = plist_dict_get_item(app, "CFBundleShortVersionString");
+		
+		if (!version {
+			version = plist_dict_get_item(app, "CFBundleVersion");
+		}
 
 		if (p_bundle_identifier) {
 			plist_get_string_val(p_bundle_identifier, &s_bundle_identifier);
