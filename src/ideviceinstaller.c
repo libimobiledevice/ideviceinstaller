@@ -141,7 +141,7 @@ static void print_apps(plist_t apps)
 		plist_t display_name = plist_dict_get_item(app, "CFBundleDisplayName");
 		plist_t version = plist_dict_get_item(app, "CFBundleShortVersionString");
 		
-		if (!version {
+		if (!version) {
 			version = plist_dict_get_item(app, "CFBundleVersion");
 		}
 
