@@ -37,6 +37,10 @@ sudo apt-get install \
 	libzip-dev \
 	usbmuxd
 ```
+### Arch Linux
+```shell
+sudo pacman -S --noconfirm base-devel git usbmuxd
+```
 
 Continue with cloning the actual project repository:
 ```shell
