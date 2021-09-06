@@ -355,6 +355,12 @@ static int zip_get_app_directory(struct zip* zf, char** path)
 
 				len = p - name + 1;
 
+				/* make sure app directory endwith .app */
+				if (len < 12 || strncmp(p - 4, ".app", 4))
+				{
+					continue;
+				}
+
 				if (path != NULL) {
 					free(*path);
 					*path = NULL;
