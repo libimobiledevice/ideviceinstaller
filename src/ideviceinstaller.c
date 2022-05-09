@@ -117,6 +117,7 @@ int use_notifier = 0;
 int notification_expected = 0;
 int is_device_connected = 0;
 int command_completed = 0;
+int ignore_events = 0;
 int err_occurred = 0;
 int notified = 0;
 
@@ -351,6 +352,9 @@ static int zip_get_app_directory(struct zip* zf, char** path)
 
 static void idevice_event_callback(const idevice_event_t* event, void* userdata)
 {
+	if (ignore_events) {
+		return;
+	}
 	if (event->event == IDEVICE_DEVICE_REMOVE) {
 		if (!strcmp(udid, event->udid)) {
 			fprintf(stderr, "ideviceinstaller: Device removed\n");
@@ -362,6 +366,7 @@ static void idevice_event_callback(const idevice_event_t* event, void* userdata)
 static void idevice_wait_for_command_to_complete()
 {
 	is_device_connected = 1;
+	ignore_events = 0;
 
 	/* subscribe to make sure to exit on device removal */
 	idevice_event_subscribe(idevice_event_callback, NULL);
@@ -377,6 +382,7 @@ static void idevice_wait_for_command_to_complete()
 		wait_ms(50);
 	}
 
+	ignore_events = 1;
 	idevice_event_unsubscribe();
 }
 
