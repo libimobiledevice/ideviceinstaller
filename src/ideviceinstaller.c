@@ -120,6 +120,7 @@ int command_completed = 0;
 int ignore_events = 0;
 int err_occurred = 0;
 int notified = 0;
+plist_t bundle_ids = NULL;
 
 static void print_apps_header()
 {
@@ -400,6 +401,8 @@ static void print_usage(int argc, char **argv)
 		"  -u, --udid UDID\tTarget specific device by UDID.\n"
 		"  -n, --network\t\tConnect to network device.\n"
 		"  -l, --list-apps\tList apps, possible options:\n"
+                "       -b, --bundle-identifier\tOnly query for given bundle identifier\n"
+                "           (can be passed multiple times)\n"
 		"       -o list_user\t- list user apps only (this is the default)\n"
 		"       -o list_system\t- list system apps only\n"
 		"       -o list_all\t- list all types of apps\n"
@@ -448,12 +451,13 @@ static void parse_opts(int argc, char **argv)
 		{ "notify-wait", no_argument, NULL, 'w' },
 		{ "debug", no_argument, NULL, 'd' },
 		{ "version", no_argument, NULL, 'v' },
+		{ "bundle-identifier", required_argument, NULL, 'b' },
 		{ NULL, 0, NULL, 0 }
 	};
 	int c;
 
 	while (1) {
-		c = getopt_long(argc, argv, "hU:li:u:g:La:r:R:o:nwdv", longopts,
+		c = getopt_long(argc, argv, "hU:li:u:g:La:r:R:o:nwdvb:", longopts,
 						(int *) 0);
 		if (c == -1) {
 			break;
@@ -492,6 +496,17 @@ static void parse_opts(int argc, char **argv)
 			break;
 		case 'n':
 			use_network = 1;
+			break;
+		case 'b':
+			if (!*optarg) {
+				printf("ERROR: bundle identifier must not be empty!\n");
+				print_usage(argc, argv);
+				exit(2);
+			}
+			if (bundle_ids == NULL) {
+				bundle_ids = plist_new_array();
+			}
+			plist_array_append_item(bundle_ids, plist_new_string(optarg));
 			break;
 		case 'l':
 			cmd = CMD_LIST_APPS;
@@ -774,6 +789,10 @@ run_again:
 				elem = strtok(NULL, ",");
 			}
 			free(opts);
+		}
+
+		if (bundle_ids) {
+			plist_dict_set_item(client_opts, "BundleIDs", plist_copy(bundle_ids));
 		}
 
 		if (!xml_mode) {
@@ -1499,6 +1518,7 @@ leave_cleanup:
 	free(appid);
 	free(options);
 	free(bundleidentifier);
+	plist_free(bundle_ids);
 
 	if (err_occurred && !res) {
 		res = 128;
