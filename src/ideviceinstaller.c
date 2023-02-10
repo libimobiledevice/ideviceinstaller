@@ -664,7 +664,7 @@ int main(int argc, char **argv)
 	np_client_t np = NULL;
 	afc_client_t afc = NULL;
 	lockdownd_service_descriptor_t service = NULL;
-	int res = 0;
+	int res = EXIT_FAILURE;
 	char *bundleidentifier = NULL;
 
 #ifndef WIN32
@@ -681,26 +681,23 @@ int main(int argc, char **argv)
 		} else {
 			fprintf(stderr, "No device found.\n");
 		}
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	if (!udid) {
 		idevice_get_udid(device, &udid);
 	}
 
-	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(device, &client, "ideviceinstaller")) {
-		fprintf(stderr, "Could not connect to lockdownd. Exiting.\n");
-		res = -1;
+	lockdownd_error_t lerr = lockdownd_client_new_with_handshake(device, &client, "ideviceinstaller");
+	if (lerr != LOCKDOWN_E_SUCCESS) {
+		fprintf(stderr, "Could not connect to lockdownd: %s. Exiting.\n", lockdownd_strerror(lerr));
 		goto leave_cleanup;
 	}
 
 	if (use_notifier) {
-		if ((lockdownd_start_service
-			 (client, "com.apple.mobile.notification_proxy",
-			  &service) != LOCKDOWN_E_SUCCESS) || !service) {
-			fprintf(stderr,
-					"Could not start com.apple.mobile.notification_proxy!\n");
-			res = -1;
+		lerr =lockdownd_start_service(client, "com.apple.mobile.notification_proxy", &service);
+		if (lerr != LOCKDOWN_E_SUCCESS) {
+			fprintf(stderr,	"Could not start com.apple.mobile.notification_proxy: %s\n", lockdownd_strerror(lerr));
 			goto leave_cleanup;
 		}
 
@@ -713,7 +710,6 @@ int main(int argc, char **argv)
 
 		if (nperr != NP_E_SUCCESS) {
 			fprintf(stderr, "Could not connect to notification_proxy!\n");
-			res = -1;
 			goto leave_cleanup;
 		}
 
@@ -730,11 +726,9 @@ run_again:
 	}
 	service = NULL;
 
-	if ((lockdownd_start_service(client, "com.apple.mobile.installation_proxy",
-		  &service) != LOCKDOWN_E_SUCCESS) || !service) {
-		fprintf(stderr,
-				"Could not start com.apple.mobile.installation_proxy!\n");
-		res = -1;
+	lerr = lockdownd_start_service(client, "com.apple.mobile.installation_proxy", &service);
+	if (lerr != LOCKDOWN_E_SUCCESS) {
+		fprintf(stderr, "Could not start com.apple.mobile.installation_proxy: %s\n", lockdownd_strerror(lerr));
 		goto leave_cleanup;
 	}
 
@@ -747,7 +741,6 @@ run_again:
 
 	if (err != INSTPROXY_E_SUCCESS) {
 		fprintf(stderr, "Could not connect to installation_proxy!\n");
-		res = -1;
 		goto leave_cleanup;
 	}
 
@@ -798,9 +791,7 @@ run_again:
 			err = instproxy_browse(ipc, client_opts, &apps);
 
 			if (!apps || (plist_get_node_type(apps) != PLIST_ARRAY)) {
-				fprintf(stderr,
-						"ERROR: instproxy_browse returnd an invalid plist!\n");
-				res = -1;
+				fprintf(stderr, "ERROR: instproxy_browse returnd an invalid plist!\n");
 				goto leave_cleanup;
 			}
 
@@ -826,7 +817,6 @@ run_again:
 		instproxy_client_options_free(client_opts);
 		if (err != INSTPROXY_E_SUCCESS) {
 			fprintf(stderr, "ERROR: instproxy_browse returned %d\n", err);
-			res = -1;
 			goto leave_cleanup;
 		}
 
@@ -843,10 +833,9 @@ run_again:
 		lockdownd_service_descriptor_free(service);
 		service = NULL;
 
-		if ((lockdownd_start_service(client, "com.apple.afc", &service) !=
-			 LOCKDOWN_E_SUCCESS) || !service) {
-			fprintf(stderr, "Could not start com.apple.afc!\n");
-			res = -1;
+		lerr = lockdownd_start_service(client, "com.apple.afc", &service);
+		if (lerr != LOCKDOWN_E_SUCCESS) {
+			fprintf(stderr, "Could not start com.apple.afc: %s\n", lockdownd_strerror(lerr));
 			goto leave_cleanup;
 		}
 
@@ -855,13 +844,11 @@ run_again:
 
 		if (afc_client_new(device, service, &afc) != AFC_E_SUCCESS) {
 			fprintf(stderr, "Could not connect to AFC!\n");
-			res = -1;
 			goto leave_cleanup;
 		}
 
 		if (stat(appid, &fst) != 0) {
 			fprintf(stderr, "ERROR: stat: %s: %s\n", appid, strerror(errno));
-			res = -1;
 			goto leave_cleanup;
 		}
 
@@ -890,7 +877,6 @@ run_again:
 			zf = zip_open(appid, 0, &errp);
 			if (!zf) {
 				fprintf(stderr, "ERROR: zip_open: %s: %d\n", appid, errp);
-				res = -1;
 				goto leave_cleanup;
 			}
 
@@ -963,7 +949,6 @@ run_again:
 								afc_file_close(afc, af);
 								zip_fclose(zfile);
 								free(dstpath);
-								res = -1;
 								goto leave_cleanup;
 							}
 						}
@@ -987,7 +972,6 @@ run_again:
 
 			if (asprintf(&pkgname, "%s/%s", PKG_PATH, basename(appid)) < 0) {
 				fprintf(stderr, "ERROR: Out of memory allocating pkgname!?\n");
-				res = -1;
 				goto leave_cleanup;
 			}
 
@@ -1008,7 +992,6 @@ run_again:
 			if (stat(filename, &st) == -1 || (fp = fopen(filename, "r")) == NULL) {
 				fprintf(stderr, "ERROR: could not locate %s in app!\n", filename);
 				free(filename);
-				res = -1;
 				goto leave_cleanup;
 			}
 			size_t filesize = st.st_size;
@@ -1017,7 +1000,6 @@ run_again:
 			if (amount != filesize) {
 				fprintf(stderr, "ERROR: could not read %u bytes from %s\n", (uint32_t)filesize, filename);
 				free(filename);
-				res = -1;
 				goto leave_cleanup;
 			}
 			fclose(fp);
@@ -1033,7 +1015,6 @@ run_again:
 
 			if (!info) {
 				fprintf(stderr, "ERROR: could not parse Info.plist!\n");
-				res = -1;
 				goto leave_cleanup;
 			}
 
@@ -1047,7 +1028,6 @@ run_again:
 			zf = zip_open(appid, 0, &errp);
 			if (!zf) {
 				fprintf(stderr, "ERROR: zip_open: %s: %d\n", appid, errp);
-				res = -1;
 				goto leave_cleanup;
 			}
 
@@ -1076,7 +1056,6 @@ run_again:
 
 			if (zip_get_app_directory(zf, &app_directory_name)) {
 				fprintf(stderr, "Unable to locate app directory in archive!\n");
-				res = -1;
 				goto leave_cleanup;
 			}
 
@@ -1092,7 +1071,6 @@ run_again:
 				free(filename);
 				zip_unchange_all(zf);
 				zip_close(zf);
-				res = -1;
 				goto leave_cleanup;
 			}
 			free(filename);
@@ -1107,7 +1085,6 @@ run_again:
 				fprintf(stderr, "Could not parse Info.plist!\n");
 				zip_unchange_all(zf);
 				zip_close(zf);
-				res = -1;
 				goto leave_cleanup;
 			}
 
@@ -1129,14 +1106,12 @@ run_again:
 				fprintf(stderr, "Could not determine value for CFBundleExecutable!\n");
 				zip_unchange_all(zf);
 				zip_close(zf);
-				res = -1;
 				goto leave_cleanup;
 			}
 
 			char *sinfname = NULL;
 			if (asprintf(&sinfname, "Payload/%s.app/SC_Info/%s.sinf", bundleexecutable, bundleexecutable) < 0) {
 				fprintf(stderr, "Out of memory!?\n");
-				res = -1;
 				goto leave_cleanup;
 			}
 			free(bundleexecutable);
@@ -1156,13 +1131,13 @@ run_again:
 			pkgname = NULL;
 			if (asprintf(&pkgname, "%s/%s", PKG_PATH, bundleidentifier) < 0) {
 				fprintf(stderr, "Out of memory!?\n");
-				res = -1;
 				goto leave_cleanup;
 			}
 
 			printf("Copying '%s' to device... ", appid);
 
 			if (afc_upload_file(afc, appid, pkgname) < 0) {
+				printf("FAILED\n");
 				free(pkgname);
 				goto leave_cleanup;
 			}
@@ -1220,14 +1195,11 @@ run_again:
 		err = instproxy_lookup_archives(ipc, NULL, &dict);
 		if (err != INSTPROXY_E_SUCCESS) {
 			fprintf(stderr, "ERROR: lookup_archives returned %d\n", err);
-			res = -1;
 			goto leave_cleanup;
 		}
 
 		if (!dict) {
-			fprintf(stderr,
-					"ERROR: lookup_archives did not return a plist!?\n");
-			res = -1;
+			fprintf(stderr, "ERROR: lookup_archives did not return a plist!?\n");
 			goto leave_cleanup;
 		}
 
@@ -1333,14 +1305,12 @@ run_again:
 			if (stat(copy_path, &fst) != 0) {
 				fprintf(stderr, "ERROR: stat: %s: %s\n", copy_path, strerror(errno));
 				free(copy_path);
-				res = -1;
 				goto leave_cleanup;
 			}
 
 			if (!S_ISDIR(fst.st_mode)) {
 				fprintf(stderr, "ERROR: '%s' is not a directory as expected.\n", copy_path);
 				free(copy_path);
-				res = -1;
 				goto leave_cleanup;
 			}
 
@@ -1352,7 +1322,6 @@ run_again:
 			if ((lockdownd_start_service(client, "com.apple.afc", &service) != LOCKDOWN_E_SUCCESS) || !service) {
 				fprintf(stderr, "Could not start com.apple.afc!\n");
 				free(copy_path);
-				res = -1;
 				goto leave_cleanup;
 			}
 
@@ -1361,7 +1330,6 @@ run_again:
 
 			if (afc_client_new(device, service, &afc) != AFC_E_SUCCESS) {
 				fprintf(stderr, "Could not connect to AFC!\n");
-				res = -1;
 				goto leave_cleanup;
 			}
 		}
@@ -1382,7 +1350,6 @@ run_again:
 			if (err_occurred) {
 				afc_client_free(afc);
 				afc = NULL;
-				res = -1;
 				goto leave_cleanup;
 			}
 			FILE *f = NULL;
@@ -1391,7 +1358,6 @@ run_again:
 			char *localfile = NULL;
 			if (asprintf(&localfile, "%s/%s.ipa", copy_path, appid) < 0) {
 				fprintf(stderr, "Out of memory!?\n");
-				res = -1;
 				goto leave_cleanup;
 			}
 			free(copy_path);
@@ -1417,7 +1383,6 @@ run_again:
 				fclose(f);
 				free(remotefile);
 				free(localfile);
-				res = -1;
 				goto leave_cleanup;
 			}
 
@@ -1448,7 +1413,6 @@ run_again:
 				fprintf(stderr, "ERROR: could not open '%s' on device for reading!\n", remotefile);
 				free(remotefile);
 				free(localfile);
-				res = -1;
 				goto leave_cleanup;
 			}
 
@@ -1498,7 +1462,6 @@ run_again:
 				options = NULL;
 				if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(device, &client, "ideviceinstaller")) {
 					fprintf(stderr, "Could not connect to lockdownd. Exiting.\n");
-					res = -1;
 					goto leave_cleanup;
 				}
 				goto run_again;
@@ -1513,9 +1476,8 @@ run_again:
 		instproxy_remove_archive(ipc, appid, NULL, status_cb, NULL);
 		wait_for_command_complete = 1;
 	} else {
-		printf
-			("ERROR: no command selected?! This should not be reached!\n");
-		res = -2;
+		printf("ERROR: no command selected?! This should not be reached!\n");
+		res = 2;
 		goto leave_cleanup;
 	}
 
@@ -1524,6 +1486,7 @@ run_again:
 	client = NULL;
 
 	idevice_wait_for_command_to_complete();
+	res = 0;
 
 leave_cleanup:
 	np_client_free(np);
