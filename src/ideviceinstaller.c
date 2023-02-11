@@ -94,7 +94,7 @@ const char APPARCH_PATH[] = "ApplicationArchives";
 
 char *udid = NULL;
 char *options = NULL;
-char *appid = NULL;
+char *cmdarg = NULL;
 
 enum cmd_mode {
 	CMD_NONE = 0,
@@ -147,7 +147,7 @@ static void print_apps(plist_t apps)
 			plist_get_string_val(p_bundle_identifier, &s_bundle_identifier);
 		}
 		if (!s_bundle_identifier) {
-			fprintf(stderr, "ERROR: Failed to get APPID!\n");
+			fprintf(stderr, "ERROR: Failed to get bundle identifier!\n");
 			break;
 		}
 
@@ -387,50 +387,49 @@ static void idevice_wait_for_command_to_complete()
 	idevice_event_unsubscribe();
 }
 
-static void print_usage(int argc, char **argv)
+static void print_usage(int argc, char **argv, int is_error)
 {
-	char *name = NULL;
-
-	name = strrchr(argv[0], '/');
-	printf("Usage: %s OPTIONS\n", (name ? name + 1 : argv[0]));
-	printf("\n");
-	printf("Manage apps on iOS devices.\n");
-	printf("\n");
-	printf(
-		"OPTIONS:\n"
-		"  -u, --udid UDID\tTarget specific device by UDID.\n"
-		"  -n, --network\t\tConnect to network device.\n"
-		"  -l, --list-apps\tList apps, possible options:\n"
-                "       -b, --bundle-identifier\tOnly query for given bundle identifier\n"
-                "           (can be passed multiple times)\n"
-		"       -o list_user\t- list user apps only (this is the default)\n"
-		"       -o list_system\t- list system apps only\n"
-		"       -o list_all\t- list all types of apps\n"
-		"       -o xml\t\t- print full output as xml plist\n"
-		"  -i, --install ARCHIVE\tInstall app from package file specified by ARCHIVE.\n"
-		"                       \tARCHIVE can also be a .ipcc file for carrier bundles.\n"
-		"  -U, --uninstall APPID\tUninstall app specified by APPID.\n"
-		"  -g, --upgrade ARCHIVE\tUpgrade app from package file specified by ARCHIVE.\n"
-		"  -L, --list-archives\tList archived applications, possible options:\n"
-		"       -o xml\t\t- print full output as xml plist\n"
-		"  -a, --archive APPID\tArchive app specified by APPID, possible options:\n"
-		"       -o uninstall\t- uninstall the package after making an archive\n"
-		"       -o app_only\t- archive application data only\n"
-		"       -o docs_only\t- archive documents (user data) only\n"
-		"       -o copy=PATH\t- copy the app archive to directory PATH when done\n"
-		"       -o remove\t- only valid when copy=PATH is used: remove after copy\n"
-		"  -r, --restore APPID\tRestore archived app specified by APPID\n"
-		"  -R, --remove-archive APPID  Remove app archive specified by APPID\n"
-		"  -o, --options\t\tPass additional options to the specified command.\n"
-		"  -w, --notify-wait\t\tWait for app installed/uninstalled notification\n"
-		"                    \t\tto before reporting success of operation\n"
-		"  -h, --help\t\tprints usage information\n"
-		"  -d, --debug\t\tenable communication debugging\n"
-		"  -v, --version\t\tprint version information\n"
-		"\n"
+	char *name = strrchr(argv[0], '/');
+	fprintf((is_error) ? stderr : stdout, "Usage: %s OPTIONS\n", (name ? name + 1 : argv[0]));
+	fprintf((is_error) ? stderr : stdout,
+	"\n"
+	"Manage apps on iOS devices.\n"
+	"\n"
+	"COMMANDS:\n"
+	"  list                List installed apps\n"
+	"        -b, --bundle-identifier  Only query for given bundle identifier\n"
+	"            (can be passed multiple times)\n"
+	"        -o list_user      list user apps only (this is the default)\n"
+	"        -o list_system    list system apps only\n"
+	"        -o list_all       list all types of apps\n"
+	"        -o xml            print full output as xml plist\n"
+	"  install PATH        Install app from package file specified by PATH.\n"
+	"                      PATH can also be a .ipcc file for carrier bundles.\n"
+	"  uninstall BUNDLEID  Uninstall app specified by BUNDLEID.\n"
+	"  upgrade PATH        Upgrade app from package file specified by PATH.\n"
+	"  list-archives       List archived apps\n"
+	"        -o xml            print full output as xml plist\n"
+	"  archive BUNDLEID   Archive app specified by BUNDLEID, possible options:\n"
+	"        -o uninstall      uninstall the package after making an archive\n"
+	"        -o app_only       archive application data only\n"
+	"        -o docs_only      archive documents (user data) only\n"
+	"        -o copy=PATH      copy the app archive to directory PATH when done\n"
+	"        -o remove         only valid when copy=PATH is used: remove after copy\n"
+	"  restore BUNDLEID   Restore archived app specified by BUNDLEID\n"
+	"  remove-archive BUNDLEID    Remove app archive specified by BUNDLEID\n"
+	"\n"
+	"OPTIONS:\n"
+	"  -u, --udid UDID     Target specific device by UDID\n"
+	"  -n, --network       Connect to network device\n"
+	"  -w, --notify-wait   Wait for app installed/uninstalled notification\n"
+	"                      to before reporting success of operation\n"
+	"  -h, --help          Print usage information\n"
+	"  -d, --debug         Enable communication debugging\n"
+	"  -v, --version       Print version information\n"
+	"\n"
+	"Homepage:    <" PACKAGE_URL ">\n"
+	"Bug Reports: <" PACKAGE_BUGREPORT ">\n"
 	);
-	printf("Homepage:    <" PACKAGE_URL ">\n");
-	printf("Bug Reports: <" PACKAGE_BUGREPORT ">\n");
 }
 
 static void parse_opts(int argc, char **argv)
@@ -439,14 +438,6 @@ static void parse_opts(int argc, char **argv)
 		{ "help", no_argument, NULL, 'h' },
 		{ "udid", required_argument, NULL, 'u' },
 		{ "network", no_argument, NULL, 'n' },
-		{ "list-apps", no_argument, NULL, 'l' },
-		{ "install", required_argument, NULL, 'i' },
-		{ "uninstall", required_argument, NULL, 'U' },
-		{ "upgrade", required_argument, NULL, 'g' },
-		{ "list-archives", no_argument, NULL, 'L' },
-		{ "archive", required_argument, NULL, 'a' },
-		{ "restore", required_argument, NULL, 'r' },
-		{ "remove-archive", required_argument, NULL, 'R' },
 		{ "options", required_argument, NULL, 'o' },
 		{ "notify-wait", no_argument, NULL, 'w' },
 		{ "debug", no_argument, NULL, 'd' },
@@ -457,39 +448,19 @@ static void parse_opts(int argc, char **argv)
 	int c;
 
 	while (1) {
-		c = getopt_long(argc, argv, "hU:li:u:g:La:r:R:o:nwdvb:", longopts,
-						(int *) 0);
+		c = getopt_long(argc, argv, "hu:o:nwdvb:", longopts, (int*)0);
 		if (c == -1) {
-			break;
-		}
-
-		/* verify if multiple modes have been supplied */
-		switch (c) {
-		case 'l':
-		case 'i':
-		case 'g':
-		case 'L':
-		case 'a':
-		case 'r':
-		case 'R':
-			if (cmd != CMD_NONE) {
-				printf("ERROR: A mode has already been supplied. Multiple modes are not supported.\n");
-				print_usage(argc, argv);
-				exit(2);
-			}
-			break;
-		default:
 			break;
 		}
 
 		switch (c) {
 		case 'h':
-			print_usage(argc, argv);
+			print_usage(argc, argv, 0);
 			exit(0);
 		case 'u':
 			if (!*optarg) {
 				printf("ERROR: UDID must not be empty!\n");
-				print_usage(argc, argv);
+				print_usage(argc, argv, 1);
 				exit(2);
 			}
 			udid = strdup(optarg);
@@ -500,43 +471,13 @@ static void parse_opts(int argc, char **argv)
 		case 'b':
 			if (!*optarg) {
 				printf("ERROR: bundle identifier must not be empty!\n");
-				print_usage(argc, argv);
+				print_usage(argc, argv, 1);
 				exit(2);
 			}
 			if (bundle_ids == NULL) {
 				bundle_ids = plist_new_array();
 			}
 			plist_array_append_item(bundle_ids, plist_new_string(optarg));
-			break;
-		case 'l':
-			cmd = CMD_LIST_APPS;
-			break;
-		case 'i':
-			cmd = CMD_INSTALL;
-			appid = strdup(optarg);
-			break;
-		case 'U':
-			cmd = CMD_UNINSTALL;
-			appid = strdup(optarg);
-			break;
-		case 'g':
-			cmd = CMD_UPGRADE;
-			appid = strdup(optarg);
-			break;
-		case 'L':
-			cmd = CMD_LIST_ARCHIVES;
-			break;
-		case 'a':
-			cmd = CMD_ARCHIVE;
-			appid = strdup(optarg);
-			break;
-		case 'r':
-			cmd = CMD_RESTORE;
-			appid = strdup(optarg);
-			break;
-		case 'R':
-			cmd = CMD_REMOVE_ARCHIVE;
-			appid = strdup(optarg);
 			break;
 		case 'o':
 			if (!options) {
@@ -560,18 +501,68 @@ static void parse_opts(int argc, char **argv)
 			printf("%s %s\n", PACKAGE_NAME, PACKAGE_VERSION);
 			exit(0);
 		default:
-			print_usage(argc, argv);
+			print_usage(argc, argv, 1);
 			exit(2);
 		}
 	}
 
-	if (cmd == CMD_NONE) {
-		printf("ERROR: No mode/command was supplied.\n");
+        argv += optind;
+	argc -= optind;
+
+	if (argc == 0) {
+		fprintf(stderr, "ERROR: Missing command.\n\n");
+		print_usage(argc+optind, argv-optind, 1);
+		exit(2);
 	}
 
-	if (cmd == CMD_NONE || optind <= 1 || (argc - optind > 0)) {
-		print_usage(argc, argv);
-		exit(2);
+	char *cmdstr = argv[0];
+
+	if (!strcmp(cmdstr, "list")) {
+		cmd = CMD_LIST_APPS;
+	} else if (!strcmp(cmdstr, "install")) {
+		cmd = CMD_INSTALL;
+	} else if (!strcmp(cmdstr, "upgrade")) {
+		cmd = CMD_UPGRADE;
+	} else if (!strcmp(cmdstr, "uninstall") || !strcmp(cmdstr, "remove")) {
+		cmd = CMD_UNINSTALL;
+	} else if (!strcmp(cmdstr, "archives") || !strcmp(cmdstr, "list-archives")) {
+		cmd = CMD_LIST_ARCHIVES;
+	} else if (!strcmp(cmdstr, "archive")) {
+		cmd = CMD_ARCHIVE;
+	} else if (!strcmp(cmdstr, "restore")) {
+		cmd = CMD_RESTORE;
+	} else if (!strcmp(cmdstr, "remove-archive")) {
+		cmd = CMD_REMOVE_ARCHIVE;
+	}
+
+	switch (cmd) {
+		case CMD_LIST_APPS:
+		case CMD_LIST_ARCHIVES:
+			break;
+		case CMD_INSTALL:
+		case CMD_UPGRADE:
+			if (argc < 2) {
+				fprintf(stderr, "ERROR: Missing filename for '%s' command.\n\n", cmdstr);
+				print_usage(argc+optind, argv-optind, 1);
+				exit(2);
+			}
+			cmdarg = argv[1];
+			break;
+		case CMD_UNINSTALL:
+		case CMD_ARCHIVE:
+		case CMD_RESTORE:
+		case CMD_REMOVE_ARCHIVE:
+			if (argc < 2) {
+				fprintf(stderr, "ERROR: Missing bundle ID for '%s' command.\n\n", cmdstr);
+				print_usage(argc+optind, argv-optind, 1);
+				exit(2);
+			}
+			cmdarg = argv[1];
+			break;
+		default:
+			fprintf(stderr, "ERROR: Invalid command '%s'.\n\n", cmdstr);
+			print_usage(argc+optind, argv-optind, 1);
+			exit(2);
 	}
 }
 
@@ -583,7 +574,7 @@ static int afc_upload_file(afc_client_t afc, const char* filename, const char* d
 
 	f = fopen(filename, "rb");
 	if (!f) {
-		fprintf(stderr, "fopen: %s: %s\n", appid, strerror(errno));
+		fprintf(stderr, "fopen: %s: %s\n", filename, strerror(errno));
 		return -1;
 	}
 
@@ -866,8 +857,8 @@ run_again:
 			goto leave_cleanup;
 		}
 
-		if (stat(appid, &fst) != 0) {
-			fprintf(stderr, "ERROR: stat: %s: %s\n", appid, strerror(errno));
+		if (stat(cmdarg, &fst) != 0) {
+			fprintf(stderr, "ERROR: stat: %s: %s\n", cmdarg, strerror(errno));
 			goto leave_cleanup;
 		}
 
@@ -892,14 +883,14 @@ run_again:
 		int errp = 0;
 		struct zip *zf = NULL;
 
-		if ((strlen(appid) > 5) && (strcmp(&appid[strlen(appid)-5], ".ipcc") == 0)) {
-			zf = zip_open(appid, 0, &errp);
+		if ((strlen(cmdarg) > 5) && (strcmp(&cmdarg[strlen(cmdarg)-5], ".ipcc") == 0)) {
+			zf = zip_open(cmdarg, 0, &errp);
 			if (!zf) {
-				fprintf(stderr, "ERROR: zip_open: %s: %d\n", appid, errp);
+				fprintf(stderr, "ERROR: zip_open: %s: %d\n", cmdarg, errp);
 				goto leave_cleanup;
 			}
 
-			char* ipcc = strdup(appid);
+			char* ipcc = strdup(cmdarg);
 			if ((asprintf(&pkgname, "%s/%s", PKG_PATH, basename(ipcc)) > 0) && pkgname) {
 				afc_make_directory(afc, pkgname);
 			}
@@ -989,20 +980,20 @@ run_again:
 			/* upload developer app directory */
 			instproxy_client_options_add(client_opts, "PackageType", "Developer", NULL);
 
-			if (asprintf(&pkgname, "%s/%s", PKG_PATH, basename(appid)) < 0) {
+			if (asprintf(&pkgname, "%s/%s", PKG_PATH, basename(cmdarg)) < 0) {
 				fprintf(stderr, "ERROR: Out of memory allocating pkgname!?\n");
 				goto leave_cleanup;
 			}
 
-			printf("Uploading %s package contents... ", basename(appid));
-			afc_upload_dir(afc, appid, pkgname);
+			printf("Uploading %s package contents... ", basename(cmdarg));
+			afc_upload_dir(afc, cmdarg, pkgname);
 			printf("DONE.\n");
 
 			/* extract the CFBundleIdentifier from the package */
 
 			/* construct full filename to Info.plist */
-			char *filename = (char*)malloc(strlen(appid)+11+1);
-			strcpy(filename, appid);
+			char *filename = (char*)malloc(strlen(cmdarg)+11+1);
+			strcpy(filename, cmdarg);
 			strcat(filename, "/Info.plist");
 
 			struct stat st;
@@ -1044,9 +1035,9 @@ run_again:
 			plist_free(info);
 			info = NULL;
 		} else {
-			zf = zip_open(appid, 0, &errp);
+			zf = zip_open(cmdarg, 0, &errp);
 			if (!zf) {
-				fprintf(stderr, "ERROR: zip_open: %s: %d\n", appid, errp);
+				fprintf(stderr, "ERROR: zip_open: %s: %d\n", cmdarg, errp);
 				goto leave_cleanup;
 			}
 
@@ -1153,9 +1144,9 @@ run_again:
 				goto leave_cleanup;
 			}
 
-			printf("Copying '%s' to device... ", appid);
+			printf("Copying '%s' to device... ", cmdarg);
 
-			if (afc_upload_file(afc, appid, pkgname) < 0) {
+			if (afc_upload_file(afc, cmdarg, pkgname) < 0) {
 				printf("FAILED\n");
 				free(pkgname);
 				goto leave_cleanup;
@@ -1191,8 +1182,8 @@ run_again:
 		wait_for_command_complete = 1;
 		notification_expected = 1;
 	} else if (cmd == CMD_UNINSTALL) {
-		printf("Uninstalling '%s'\n", appid);
-		instproxy_uninstall(ipc, appid, NULL, status_cb, NULL);
+		printf("Uninstalling '%s'\n", cmdarg);
+		instproxy_uninstall(ipc, cmdarg, NULL, status_cb, NULL);
 		wait_for_command_complete = 1;
 		notification_expected = 0;
 	} else if (cmd == CMD_LIST_ARCHIVES) {
@@ -1353,7 +1344,7 @@ run_again:
 			}
 		}
 
-		instproxy_archive(ipc, appid, client_opts, status_cb, NULL);
+		instproxy_archive(ipc, cmdarg, client_opts, status_cb, NULL);
 
 		instproxy_client_options_free(client_opts);
 		wait_for_command_complete = 1;
@@ -1375,7 +1366,7 @@ run_again:
 			uint64_t af = 0;
 			/* local filename */
 			char *localfile = NULL;
-			if (asprintf(&localfile, "%s/%s.ipa", copy_path, appid) < 0) {
+			if (asprintf(&localfile, "%s/%s.ipa", copy_path, cmdarg) < 0) {
 				fprintf(stderr, "Out of memory!?\n");
 				goto leave_cleanup;
 			}
@@ -1390,7 +1381,7 @@ run_again:
 
 			/* remote filename */
 			char *remotefile = NULL;
-			if (asprintf(&remotefile, "%s/%s.zip", APPARCH_PATH, appid) < 0) {
+			if (asprintf(&remotefile, "%s/%s.zip", APPARCH_PATH, cmdarg) < 0) {
 				fprintf(stderr, "Out of memory!?\n");
 				goto leave_cleanup;
 			}
@@ -1475,7 +1466,7 @@ run_again:
 
 			if (remove_after_copy) {
 				/* remove archive if requested */
-				printf("Removing '%s'\n", appid);
+				printf("Removing '%s'\n", cmdarg);
 				cmd = CMD_REMOVE_ARCHIVE;
 				free(options);
 				options = NULL;
@@ -1488,11 +1479,11 @@ run_again:
 		}
 		goto leave_cleanup;
 	} else if (cmd == CMD_RESTORE) {
-		instproxy_restore(ipc, appid, NULL, status_cb, NULL);
+		instproxy_restore(ipc, cmdarg, NULL, status_cb, NULL);
 		wait_for_command_complete = 1;
 		notification_expected = 1;
 	} else if (cmd == CMD_REMOVE_ARCHIVE) {
-		instproxy_remove_archive(ipc, appid, NULL, status_cb, NULL);
+		instproxy_remove_archive(ipc, cmdarg, NULL, status_cb, NULL);
 		wait_for_command_complete = 1;
 	} else {
 		printf("ERROR: no command selected?! This should not be reached!\n");
@@ -1515,7 +1506,6 @@ leave_cleanup:
 	idevice_free(device);
 
 	free(udid);
-	free(appid);
 	free(options);
 	free(bundleidentifier);
 	plist_free(bundle_ids);
