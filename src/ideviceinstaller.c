@@ -348,6 +348,10 @@ static int zip_get_app_directory(struct zip* zf, char** path)
 		}
 	} while(i < c);
 
+	if (*path == NULL) {
+		return -1;
+	}
+
 	return 0;
 }
 
