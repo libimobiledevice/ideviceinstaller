@@ -1069,7 +1069,7 @@ run_again:
 			char* app_directory_name = NULL;
 
 			if (zip_get_app_directory(zf, &app_directory_name)) {
-				fprintf(stderr, "Unable to locate app directory in archive!\n");
+				fprintf(stderr, "ERROR: Unable to locate .app directory in archive. Make sure it is inside a 'Payload' directory.\n");
 				goto leave_cleanup;
 			}
 
