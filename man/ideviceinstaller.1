@@ -45,19 +45,8 @@ Uninstall app specified by BUNDLEID.
 .B upgrade PATH
 Upgrade app from a package file specified by PATH.
 
-.TP
-.B restore BUNDLEID
-Restore archived app specified by BUNDLEID.
-
-.TP
-.B list-archives
-List archived apps on the device.
-.RS
-.TP
-\-o xml
-print full output as xml plist
-.RE
-
+.SH LEGACY COMMANDS
+The following commands are non-functional with iOS 7 or later.
 .TP
 .B archive BUNDLEID
 Archive app specified by BUNDLEID.
@@ -80,9 +69,21 @@ only valid when copy=PATH is used: remove after copy
 .RE
 
 .TP
+.B restore BUNDLEID
+Restore archived app specified by BUNDLEID.
+
+.TP
+.B list-archives
+List archived apps on the device.
+.RS
+.TP
+\-o xml
+print full output as xml plist
+.RE
+
+.TP
 .B remove-archive BUNDLEID
 Remove app archive specified by BUNDLEID.
-
 
 .SH OPTIONS
 .TP
