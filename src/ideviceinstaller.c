@@ -126,7 +126,7 @@ static void print_apps_header()
 {
 	/* output app details header */
 	printf("%s", "CFBundleIdentifier");
-	printf(", %s", "CFBundleVersion");
+	printf(", %s", "CFBundleShortVersionString");
 	printf(", %s", "CFBundleDisplayName");
 	printf("\n");
 }
@@ -136,41 +136,15 @@ static void print_apps(plist_t apps)
 	uint32_t i = 0;
 	for (i = 0; i < plist_array_get_size(apps); i++) {
 		plist_t app = plist_array_get_item(apps, i);
-		plist_t p_bundle_identifier = plist_dict_get_item(app, "CFBundleIdentifier");
-		char *s_bundle_identifier = NULL;
-		char *s_display_name = NULL;
-		char *s_version = NULL;
+		plist_t bundle_identifier = plist_dict_get_item(app, "CFBundleIdentifier");
 		plist_t display_name = plist_dict_get_item(app, "CFBundleDisplayName");
-		plist_t version = plist_dict_get_item(app, "CFBundleVersion");
-
-		if (p_bundle_identifier) {
-			plist_get_string_val(p_bundle_identifier, &s_bundle_identifier);
-		}
-		if (!s_bundle_identifier) {
-			fprintf(stderr, "ERROR: Failed to get bundle identifier!\n");
-			break;
-		}
-
-		if (version) {
-			plist_get_string_val(version, &s_version);
-		}
-		if (display_name) {
-			plist_get_string_val(display_name, &s_display_name);
-		}
-		if (!s_display_name) {
-			s_display_name = strdup(s_bundle_identifier);
-		}
+		plist_t version = plist_dict_get_item(app, "CFBundleShortVersionString");
 
 		/* output app details */
-		printf("%s", s_bundle_identifier);
-		if (s_version) {
-			printf(", \"%s\"", s_version);
-			free(s_version);
-		}
-		printf(", \"%s\"", s_display_name);
+		printf("%s", plist_get_string_ptr(bundle_identifier, NULL));
+		printf(", \"%s\"", (version) ? plist_get_string_ptr(version, NULL) : "");
+		printf(", \"%s\"", (display_name) ? plist_get_string_ptr(display_name, NULL) : plist_get_string_ptr(bundle_identifier, NULL));
 		printf("\n");
-		free(s_display_name);
-		free(s_bundle_identifier);
 	}
 }
 
@@ -795,6 +769,7 @@ run_again:
 			instproxy_client_options_set_return_attributes(client_opts,
 				"CFBundleIdentifier",
 				"CFBundleDisplayName",
+				"CFBundleShortVersionString",
 				"CFBundleVersion",
 				"StaticDiskUsage",
 				"DynamicDiskUsage",
@@ -1251,7 +1226,7 @@ run_again:
 				plist_t dispName =
 					plist_dict_get_item(node, "CFBundleDisplayName");
 				plist_t version =
-					plist_dict_get_item(node, "CFBundleVersion");
+					plist_dict_get_item(node, "CFBundleShortVersionString");
 				if (dispName) {
 					plist_get_string_val(dispName, &s_dispName);
 				}
