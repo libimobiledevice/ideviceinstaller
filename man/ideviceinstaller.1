@@ -15,8 +15,21 @@ Allows to enumerate, install, upgrade, and uninstall apps on iOS devices.
 List installed apps on the device.
 .RS
 .TP
-\-b <bundleID>
-Only query for given bundle identifier (can be passed multiple times)
+\-a|\-\-attribute <attr>
+Specify attribute to return. This argument can be passed multiple times. If omitted and \f[B]-o xml\f[] is *not* specified, the default attributes \f[B]CFBundleIdentifier\f[], \f[B]CFBundleShortVersionString\f[], and \f[B]CFBundleDisplayName\f[] will be used. The attributes can be found in the app's Info.plist, but also some extra attributes exist. Some examples:
+.RS
+.TP
+\f[B]StaticDiskUsage\f[]   disk usage of installed app
+.TP
+\f[B]DynamicDiskUsage\f[]  app user data disk usage
+.TP
+\f[B]Path\f[]              app installation location
+.TP
+\f[B]SignerIdentity\f[]    code signing identity
+.RE
+.TP
+\-b|--bundle-identifier <bundleID>
+Only query given bundle identifier. This argument can be passed multiple times.
 .TP
 \-o list_user
 list user apps only (apps installed by the user)
@@ -94,7 +107,7 @@ Target specific device by UDID.
 Connect to network device.
 .TP
 .B \-w, \-\-notify-wait
-Wait for app installed/uninstalled notification to before reporting success of operation.
+Wait for app installed/uninstalled notification before reporting success of operation.
 .TP
 .B \-h, \-\-help
 Print usage information.

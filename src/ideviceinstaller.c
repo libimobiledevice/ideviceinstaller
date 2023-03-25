@@ -121,29 +121,69 @@ int ignore_events = 0;
 int err_occurred = 0;
 int notified = 0;
 plist_t bundle_ids = NULL;
+plist_t return_attrs = NULL;
+int return_attrs_have_CFBundleIdentifier = 0;
 
 static void print_apps_header()
 {
-	/* output app details header */
-	printf("%s", "CFBundleIdentifier");
-	printf(", %s", "CFBundleShortVersionString");
-	printf(", %s", "CFBundleDisplayName");
+	if (!return_attrs) {
+		return;
+	}
+	uint32_t i = 0;
+	for (i = 0; i < plist_array_get_size(return_attrs); i++) {
+		plist_t node = plist_array_get_item(return_attrs, i);
+		if (i > 0) {
+			printf(", ");
+		}
+		printf("%s", plist_get_string_ptr(node, NULL));
+	}
 	printf("\n");
 }
 
 static void print_apps(plist_t apps)
 {
+	if (!return_attrs) {
+		return;
+	}
 	uint32_t i = 0;
 	for (i = 0; i < plist_array_get_size(apps); i++) {
 		plist_t app = plist_array_get_item(apps, i);
-		plist_t bundle_identifier = plist_dict_get_item(app, "CFBundleIdentifier");
-		plist_t display_name = plist_dict_get_item(app, "CFBundleDisplayName");
-		plist_t version = plist_dict_get_item(app, "CFBundleShortVersionString");
-
-		/* output app details */
-		printf("%s", plist_get_string_ptr(bundle_identifier, NULL));
-		printf(", \"%s\"", (version) ? plist_get_string_ptr(version, NULL) : "");
-		printf(", \"%s\"", (display_name) ? plist_get_string_ptr(display_name, NULL) : plist_get_string_ptr(bundle_identifier, NULL));
+		uint32_t j = 0;
+		for (j = 0; j < plist_array_get_size(return_attrs); j++) {
+			plist_t node = plist_array_get_item(return_attrs, j);
+			if (j > 0) {
+				printf(", ");
+			}
+			const char* key = plist_get_string_ptr(node, NULL);
+			node = plist_dict_get_item(app, key);
+			if (node) {
+				if (!strcmp(key, "CFBundleIdentifier")) {
+					printf("%s", plist_get_string_ptr(node, NULL));
+				} else {
+					uint64_t uval = 0;
+					switch (plist_get_node_type(node)) {
+						case PLIST_STRING:
+							printf("\"%s\"", plist_get_string_ptr(node, NULL));
+							break;
+						case PLIST_INT:
+							plist_get_uint_val(node, &uval);
+							printf("%llu", uval);
+							break;
+						case PLIST_BOOLEAN:
+							printf("%s", plist_bool_val_is_true(node) ? "true" : "false");
+							break;
+						case PLIST_ARRAY:
+							printf("(array)");
+							break;
+						case PLIST_DICT:
+							printf("(dict)");
+							break;
+						default:
+							break;
+					}
+				}
+			}
+		}
 		printf("\n");
 	}
 }
@@ -375,7 +415,9 @@ static void print_usage(int argc, char **argv, int is_error)
 	"\n"
 	"COMMANDS:\n"
 	"  list                List installed apps\n"
-	"        -b, --bundle-identifier  Only query for given bundle identifier\n"
+	"        -a, --attribute ATTR  Specify attribute to return - see man page\n"
+	"            (can be passed multiple times)\n"
+	"        -b, --bundle-identifier BUNDLEID  Only query given bundle identifier\n"
 	"            (can be passed multiple times)\n"
 	"        -o list_user      list user apps only (this is the default)\n"
 	"        -o list_system    list system apps only\n"
@@ -385,8 +427,9 @@ static void print_usage(int argc, char **argv, int is_error)
 	"                      PATH can also be a .ipcc file for carrier bundles.\n"
 	"  uninstall BUNDLEID  Uninstall app specified by BUNDLEID.\n"
 	"  upgrade PATH        Upgrade app from package file specified by PATH.\n"
+        "\n"
         "LEGACY COMMANDS (non-functional with iOS 7 or later):\n"
-	"  archive BUNDLEID   Archive app specified by BUNDLEID, possible options:\n"
+	"  archive BUNDLEID    Archive app specified by BUNDLEID, possible options:\n"
 	"        -o uninstall      uninstall the package after making an archive\n"
 	"        -o app_only       archive application data only\n"
 	"        -o docs_only      archive documents (user data) only\n"
@@ -401,7 +444,7 @@ static void print_usage(int argc, char **argv, int is_error)
 	"  -u, --udid UDID     Target specific device by UDID\n"
 	"  -n, --network       Connect to network device\n"
 	"  -w, --notify-wait   Wait for app installed/uninstalled notification\n"
-	"                      to before reporting success of operation\n"
+	"                      before reporting success of operation\n"
 	"  -h, --help          Print usage information\n"
 	"  -d, --debug         Enable communication debugging\n"
 	"  -v, --version       Print version information\n"
@@ -422,12 +465,13 @@ static void parse_opts(int argc, char **argv)
 		{ "debug", no_argument, NULL, 'd' },
 		{ "version", no_argument, NULL, 'v' },
 		{ "bundle-identifier", required_argument, NULL, 'b' },
+		{ "attribute", required_argument, NULL, 'a' },
 		{ NULL, 0, NULL, 0 }
 	};
 	int c;
 
 	while (1) {
-		c = getopt_long(argc, argv, "hu:o:nwdvb:", longopts, (int*)0);
+		c = getopt_long(argc, argv, "hu:o:nwdvb:a:", longopts, (int*)0);
 		if (c == -1) {
 			break;
 		}
@@ -446,6 +490,20 @@ static void parse_opts(int argc, char **argv)
 			break;
 		case 'n':
 			use_network = 1;
+			break;
+		case 'a':
+			if (!*optarg) {
+				printf("ERROR: attribute must not be empty!\n");
+				print_usage(argc, argv, 1);
+				exit(2);
+			}
+			if (return_attrs == NULL) {
+				return_attrs = plist_new_array();
+			}
+			plist_array_append_item(return_attrs, plist_new_string(optarg));
+			if (!strcmp(optarg, "CFBundleIdentifier")) {
+				return_attrs_have_CFBundleIdentifier = 1;
+			}
 			break;
 		case 'b':
 			if (!*optarg) {
@@ -765,16 +823,19 @@ run_again:
 			plist_dict_set_item(client_opts, "BundleIDs", plist_copy(bundle_ids));
 		}
 
-		if (!xml_mode) {
-			instproxy_client_options_set_return_attributes(client_opts,
-				"CFBundleIdentifier",
-				"CFBundleDisplayName",
-				"CFBundleShortVersionString",
-				"CFBundleVersion",
-				"StaticDiskUsage",
-				"DynamicDiskUsage",
-				NULL
-			);
+		if (!xml_mode && !return_attrs) {
+			return_attrs = plist_new_array();
+			plist_array_append_item(return_attrs, plist_new_string("CFBundleIdentifier"));
+			return_attrs_have_CFBundleIdentifier = 1;
+			plist_array_append_item(return_attrs, plist_new_string("CFBundleShortVersionString"));
+			plist_array_append_item(return_attrs, plist_new_string("CFBundleDisplayName"));
+		}
+
+		if (return_attrs) {
+			if (!return_attrs_have_CFBundleIdentifier) {
+				plist_array_insert_item(return_attrs, plist_new_string("CFBundleIdentifier"), 0);
+			}
+			instproxy_client_options_add(client_opts, "ReturnAttributes", return_attrs, NULL);
 		}
 
 		if (xml_mode) {
@@ -1489,6 +1550,7 @@ leave_cleanup:
 	free(options);
 	free(bundleidentifier);
 	plist_free(bundle_ids);
+	plist_free(return_attrs);
 
 	if (err_occurred && !res) {
 		res = 128;
