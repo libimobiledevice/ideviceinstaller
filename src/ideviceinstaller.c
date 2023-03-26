@@ -1,7 +1,7 @@
 /*
  * ideviceinstaller - Manage apps on iOS devices.
  *
- * Copyright (C) 2010-2019 Nikias Bassen <nikias@gmx.li>
+ * Copyright (C) 2010-2023 Nikias Bassen <nikias@gmx.li>
  * Copyright (C) 2010-2015 Martin Szulecki <m.szulecki@libimobiledevice.org>
  *
  * Licensed under the GNU General Public License Version 2
@@ -93,7 +93,6 @@ const char PKG_PATH[] = "PublicStaging";
 const char APPARCH_PATH[] = "ApplicationArchives";
 
 char *udid = NULL;
-char *options = NULL;
 char *cmdarg = NULL;
 
 enum cmd_mode {
@@ -122,7 +121,14 @@ int err_occurred = 0;
 int notified = 0;
 plist_t bundle_ids = NULL;
 plist_t return_attrs = NULL;
-int return_attrs_have_CFBundleIdentifier = 0;
+int xml_mode = 0;
+int opt_list_user = 0;
+int opt_list_system = 0;
+char *copy_path = NULL;
+int remove_after_copy = 0;
+int skip_uninstall = 1;
+int app_only = 0;
+int docs_only = 0;
 
 static void print_apps_header()
 {
@@ -414,30 +420,30 @@ static void print_usage(int argc, char **argv, int is_error)
 	"Manage apps on iOS devices.\n"
 	"\n"
 	"COMMANDS:\n"
-	"  list                List installed apps\n"
+	"  list                List installed apps. Options:\n"
+	"        --user          List user apps only (this is the default)\n"
+	"        --system        List system apps only\n"
+	"        --all           List all types of apps\n"
+	"        --xml           Print output as XML Property List\n"
 	"        -a, --attribute ATTR  Specify attribute to return - see man page\n"
 	"            (can be passed multiple times)\n"
 	"        -b, --bundle-identifier BUNDLEID  Only query given bundle identifier\n"
 	"            (can be passed multiple times)\n"
-	"        -o list_user      list user apps only (this is the default)\n"
-	"        -o list_system    list system apps only\n"
-	"        -o list_all       list all types of apps\n"
-	"        -o xml            print full output as xml plist\n"
 	"  install PATH        Install app from package file specified by PATH.\n"
 	"                      PATH can also be a .ipcc file for carrier bundles.\n"
 	"  uninstall BUNDLEID  Uninstall app specified by BUNDLEID.\n"
 	"  upgrade PATH        Upgrade app from package file specified by PATH.\n"
         "\n"
         "LEGACY COMMANDS (non-functional with iOS 7 or later):\n"
-	"  archive BUNDLEID    Archive app specified by BUNDLEID, possible options:\n"
-	"        -o uninstall      uninstall the package after making an archive\n"
-	"        -o app_only       archive application data only\n"
-	"        -o docs_only      archive documents (user data) only\n"
-	"        -o copy=PATH      copy the app archive to directory PATH when done\n"
-	"        -o remove         only valid when copy=PATH is used: remove after copy\n"
-	"  restore BUNDLEID   Restore archived app specified by BUNDLEID\n"
-	"  list-archives       List archived apps\n"
-	"        -o xml            print full output as xml plist\n"
+	"  archive BUNDLEID    Archive app specified by BUNDLEID. Options:\n"
+	"        --uninstall     Uninstall the package after making an archive\n"
+	"        --app-only      Archive application data only\n"
+	"        --docs-only     Archive documents (user data) only\n"
+	"        --copy=PATH     Copy the app archive to directory PATH when done\n"
+	"        --remove        Only valid when copy=PATH is used: remove after copy\n"
+	"  restore BUNDLEID    Restore archived app specified by BUNDLEID\n"
+	"  list-archives       List archived apps. Options:\n"
+	"        --xml           Print output as XML Property List\n"
 	"  remove-archive BUNDLEID    Remove app archive specified by BUNDLEID\n"
 	"\n"
 	"OPTIONS:\n"
@@ -454,24 +460,44 @@ static void print_usage(int argc, char **argv, int is_error)
 	);
 }
 
+enum numerical_opts {
+	LIST_USER = 1,
+	LIST_SYSTEM,
+	LIST_ALL,
+	ARCHIVE_UNINSTALL,
+	ARCHIVE_APP_ONLY,
+	ARCHIVE_DOCS_ONLY,
+	ARCHIVE_COPY_PATH,
+	ARCHIVE_COPY_REMOVE,
+	OUTPUT_XML
+};
+
 static void parse_opts(int argc, char **argv)
 {
 	static struct option longopts[] = {
 		{ "help", no_argument, NULL, 'h' },
 		{ "udid", required_argument, NULL, 'u' },
 		{ "network", no_argument, NULL, 'n' },
-		{ "options", required_argument, NULL, 'o' },
 		{ "notify-wait", no_argument, NULL, 'w' },
 		{ "debug", no_argument, NULL, 'd' },
 		{ "version", no_argument, NULL, 'v' },
 		{ "bundle-identifier", required_argument, NULL, 'b' },
 		{ "attribute", required_argument, NULL, 'a' },
+		{ "user", no_argument, NULL, LIST_USER },
+		{ "system", no_argument, NULL, LIST_SYSTEM },
+		{ "all", no_argument, NULL, LIST_ALL },
+		{ "xml", no_argument, NULL, OUTPUT_XML },
+		{ "uninstall", no_argument, NULL, ARCHIVE_UNINSTALL },
+		{ "app-only", no_argument, NULL, ARCHIVE_APP_ONLY },
+		{ "docs-only", no_argument, NULL, ARCHIVE_DOCS_ONLY },
+		{ "copy", required_argument, NULL, ARCHIVE_COPY_PATH },
+		{ "remove", no_argument, NULL, ARCHIVE_COPY_REMOVE },
 		{ NULL, 0, NULL, 0 }
 	};
 	int c;
 
 	while (1) {
-		c = getopt_long(argc, argv, "hu:o:nwdvb:a:", longopts, (int*)0);
+		c = getopt_long(argc, argv, "hu:nwdvb:a:", longopts, (int*)0);
 		if (c == -1) {
 			break;
 		}
@@ -501,9 +527,6 @@ static void parse_opts(int argc, char **argv)
 				return_attrs = plist_new_array();
 			}
 			plist_array_append_item(return_attrs, plist_new_string(optarg));
-			if (!strcmp(optarg, "CFBundleIdentifier")) {
-				return_attrs_have_CFBundleIdentifier = 1;
-			}
 			break;
 		case 'b':
 			if (!*optarg) {
@@ -516,18 +539,6 @@ static void parse_opts(int argc, char **argv)
 			}
 			plist_array_append_item(bundle_ids, plist_new_string(optarg));
 			break;
-		case 'o':
-			if (!options) {
-				options = strdup(optarg);
-			} else {
-				char *newopts = malloc(strlen(options) + strlen(optarg) + 2);
-				strcpy(newopts, options);
-				free(options);
-				strcat(newopts, ",");
-				strcat(newopts, optarg);
-				options = newopts;
-			}
-			break;
 		case 'w':
 			use_notifier = 1;
 			break;
@@ -537,6 +548,36 @@ static void parse_opts(int argc, char **argv)
 		case 'v':
 			printf("%s %s\n", PACKAGE_NAME, PACKAGE_VERSION);
 			exit(0);
+		case LIST_USER:
+			opt_list_user = 1;
+			break;
+		case LIST_SYSTEM:
+			opt_list_system = 1;
+			break;
+		case LIST_ALL:
+			opt_list_user = 1;
+			opt_list_system = 1;
+			break;
+		case OUTPUT_XML:
+			xml_mode = 1;
+			break;
+		case ARCHIVE_UNINSTALL:
+			skip_uninstall = 0;
+			break;
+		case ARCHIVE_APP_ONLY:
+			app_only = 1;
+			docs_only = 0;
+			break;
+		case ARCHIVE_DOCS_ONLY:
+			docs_only = 1;
+			app_only = 0;
+			break;
+		case ARCHIVE_COPY_PATH:
+			copy_path = strdup(optarg);
+			break;
+		case ARCHIVE_COPY_REMOVE:
+			remove_after_copy = 1;
+			break;
 		default:
 			print_usage(argc, argv, 1);
 			exit(2);
@@ -795,46 +836,30 @@ run_again:
 	notification_expected = 0;
 
 	if (cmd == CMD_LIST_APPS) {
-		int xml_mode = 0;
 		plist_t client_opts = instproxy_client_options_new();
 		instproxy_client_options_add(client_opts, "ApplicationType", "User", NULL);
 		plist_t apps = NULL;
 
-		/* look for options */
-		if (options) {
-			char *opts = strdup(options);
-			char *elem = strtok(opts, ",");
-			while (elem) {
-				if (!strcmp(elem, "list_system")) {
-					instproxy_client_options_add(client_opts, "ApplicationType", "System", NULL);
-				} else if (!strcmp(elem, "list_all")) {
-					plist_dict_remove_item(client_opts, "ApplicationType");
-				} else if (!strcmp(elem, "list_user")) {
-					/* do nothing, we're already set */
-				} else if (!strcmp(elem, "xml")) {
-					xml_mode = 1;
-				}
-				elem = strtok(NULL, ",");
-			}
-			free(opts);
+		if (opt_list_system && opt_list_user) {
+			plist_dict_remove_item(client_opts, "ApplicationType");
+		} else if (opt_list_system) {
+			instproxy_client_options_add(client_opts, "ApplicationType", "System", NULL);
+		} else if (opt_list_user) {
+			instproxy_client_options_add(client_opts, "ApplicationType", "User", NULL);
 		}
 
 		if (bundle_ids) {
 			plist_dict_set_item(client_opts, "BundleIDs", plist_copy(bundle_ids));
 		}
 
-		if (!xml_mode && !return_attrs) {
+		if (!xml_mode) {
 			return_attrs = plist_new_array();
 			plist_array_append_item(return_attrs, plist_new_string("CFBundleIdentifier"));
-			return_attrs_have_CFBundleIdentifier = 1;
 			plist_array_append_item(return_attrs, plist_new_string("CFBundleShortVersionString"));
 			plist_array_append_item(return_attrs, plist_new_string("CFBundleDisplayName"));
 		}
 
 		if (return_attrs) {
-			if (!return_attrs_have_CFBundleIdentifier) {
-				plist_array_insert_item(return_attrs, plist_new_string("CFBundleIdentifier"), 0);
-			}
 			instproxy_client_options_add(client_opts, "ReturnAttributes", return_attrs, NULL);
 		}
 
@@ -845,7 +870,6 @@ run_again:
 				fprintf(stderr, "ERROR: instproxy_browse returnd an invalid plist!\n");
 				goto leave_cleanup;
 			}
-
 			char *xml = NULL;
 			uint32_t len = 0;
 
@@ -1228,20 +1252,7 @@ run_again:
 		wait_for_command_complete = 1;
 		notification_expected = 0;
 	} else if (cmd == CMD_LIST_ARCHIVES) {
-		int xml_mode = 0;
 		plist_t dict = NULL;
-
-		/* look for options */
-		if (options) {
-			char *opts = strdup(options);
-			char *elem = strtok(opts, ",");
-			while (elem) {
-				if (!strcmp(elem, "xml")) {
-					xml_mode = 1;
-				}
-				elem = strtok(NULL, ",");
-			}
-		}
 
 		err = instproxy_lookup_archives(ipc, NULL, &dict);
 		if (err != INSTPROXY_E_SUCCESS) {
@@ -1257,7 +1268,6 @@ run_again:
 		if (xml_mode) {
 			char *xml = NULL;
 			uint32_t len = 0;
-
 			plist_to_xml(dict, &xml, &len);
 			if (xml) {
 				puts(xml);
@@ -1310,34 +1320,7 @@ run_again:
 		while (node);
 		plist_free(dict);
 	} else if (cmd == CMD_ARCHIVE) {
-		char *copy_path = NULL;
-		int remove_after_copy = 0;
-		int skip_uninstall = 1;
-		int app_only = 0;
-		int docs_only = 0;
 		plist_t client_opts = NULL;
-
-		/* look for options */
-		if (options) {
-			char *opts = strdup(options);
-			char *elem = strtok(opts, ",");
-			while (elem) {
-				if (!strcmp(elem, "uninstall")) {
-					skip_uninstall = 0;
-				} else if (!strcmp(elem, "app_only")) {
-					app_only = 1;
-					docs_only = 0;
-				} else if (!strcmp(elem, "docs_only")) {
-					docs_only = 1;
-					app_only = 0;
-				} else if ((strlen(elem) > 5) && !strncmp(elem, "copy=", 5)) {
-					copy_path = strdup(elem+5);
-				} else if (!strcmp(elem, "remove")) {
-					remove_after_copy = 1;
-				}
-				elem = strtok(NULL, ",");
-			}
-		}
 
 		if (skip_uninstall || app_only || docs_only) {
 			client_opts = instproxy_client_options_new();
@@ -1355,13 +1338,11 @@ run_again:
 			struct stat fst;
 			if (stat(copy_path, &fst) != 0) {
 				fprintf(stderr, "ERROR: stat: %s: %s\n", copy_path, strerror(errno));
-				free(copy_path);
 				goto leave_cleanup;
 			}
 
 			if (!S_ISDIR(fst.st_mode)) {
 				fprintf(stderr, "ERROR: '%s' is not a directory as expected.\n", copy_path);
-				free(copy_path);
 				goto leave_cleanup;
 			}
 
@@ -1372,7 +1353,6 @@ run_again:
 
 			if ((lockdownd_start_service(client, "com.apple.afc", &service) != LOCKDOWN_E_SUCCESS) || !service) {
 				fprintf(stderr, "Could not start com.apple.afc!\n");
-				free(copy_path);
 				goto leave_cleanup;
 			}
 
@@ -1411,7 +1391,6 @@ run_again:
 				fprintf(stderr, "Out of memory!?\n");
 				goto leave_cleanup;
 			}
-			free(copy_path);
 
 			f = fopen(localfile, "wb");
 			if (!f) {
@@ -1509,8 +1488,6 @@ run_again:
 				/* remove archive if requested */
 				printf("Removing '%s'\n", cmdarg);
 				cmd = CMD_REMOVE_ARCHIVE;
-				free(options);
-				options = NULL;
 				if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(device, &client, "ideviceinstaller")) {
 					fprintf(stderr, "Could not connect to lockdownd. Exiting.\n");
 					goto leave_cleanup;
@@ -1547,7 +1524,7 @@ leave_cleanup:
 	idevice_free(device);
 
 	free(udid);
-	free(options);
+	free(copy_path);
 	free(bundleidentifier);
 	plist_free(bundle_ids);
 	plist_free(return_attrs);

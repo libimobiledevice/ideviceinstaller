@@ -12,11 +12,24 @@ Allows to enumerate, install, upgrade, and uninstall apps on iOS devices.
 .SH COMMANDS
 .TP
 .B list
-List installed apps on the device.
+List installed apps on the device. Options:
 .RS
 .TP
-\-a|\-\-attribute <attr>
-Specify attribute to return. This argument can be passed multiple times. If omitted and \f[B]-o xml\f[] is *not* specified, the default attributes \f[B]CFBundleIdentifier\f[], \f[B]CFBundleShortVersionString\f[], and \f[B]CFBundleDisplayName\f[] will be used. The attributes can be found in the app's Info.plist, but also some extra attributes exist. Some examples:
+.B \-\-user
+List user apps only (apps installed by the user).
+.B This is the default.
+.TP
+.B \-\-system
+List system apps only (apps available from the system firmware).
+.TP
+.B \-\-all
+List all types of apps.
+.TP
+.B \-\-xml
+Print output as XML Property List.
+.TP
+.B \-a, \-\-attribute ATTR
+Specify attribute to return. This argument can be passed multiple times. If omitted and \f[B]\-\-xml\f[] is *not* specified, the default attributes \f[B]CFBundleIdentifier\f[], \f[B]CFBundleShortVersionString\f[], and \f[B]CFBundleDisplayName\f[] will be used. The attributes can be found in the app's Info.plist, but also some extra attributes exist. Some examples:
 .RS
 .TP
 \f[B]StaticDiskUsage\f[]   disk usage of installed app
@@ -26,23 +39,12 @@ Specify attribute to return. This argument can be passed multiple times. If omit
 \f[B]Path\f[]              app installation location
 .TP
 \f[B]SignerIdentity\f[]    code signing identity
+.TP
+NOTE: It is suggested to always add CFBundleIdentifier to allow unique identification of the apps.
 .RE
 .TP
-\-b|--bundle-identifier <bundleID>
+.B \-b, \-\-bundle\-identifier BUNDLEID
 Only query given bundle identifier. This argument can be passed multiple times.
-.TP
-\-o list_user
-list user apps only (apps installed by the user)
-.B This is the default.
-.TP
-\-o list_system
-list system apps only (apps available from the system firmware)
-.TP
-\-o list_all
-list all types of apps
-.TP
-\-o xml
-print output in xml format (PList)
 .RE
 .TP
 .B install PATH
@@ -62,23 +64,23 @@ Upgrade app from a package file specified by PATH.
 The following commands are non-functional with iOS 7 or later.
 .TP
 .B archive BUNDLEID
-Archive app specified by BUNDLEID.
+Archive app specified by BUNDLEID. Options:
 .RS
 .TP
-\-o uninstall
-uninstall the package after making an archive
+.B \-\-uninstall
+Uninstall the package after making an archive
 .TP
-\-o app_only
-archive application data only
+.B \-\-app_only
+Archive application data only
 .TP
-\-o docs_only
-archive documents (user data) only
+.B \-\-docs_only
+Archive documents (user data) only
 .TP
-\-o copy=PATH
-copy the app archive to directory PATH when done
+.B \-\-copy=PATH
+Copy the app archive to directory PATH when done
 .TP
-\-o remove
-only valid when copy=PATH is used: remove after copy
+.B \-\-remove
+Only valid when copy=PATH is used: remove after copy
 .RE
 
 .TP
@@ -87,11 +89,11 @@ Restore archived app specified by BUNDLEID.
 
 .TP
 .B list-archives
-List archived apps on the device.
+List archived apps on the device. Options:
 .RS
 .TP
-\-o xml
-print full output as xml plist
+.B \-\-xml
+Print output as XML Property List.
 .RE
 
 .TP
