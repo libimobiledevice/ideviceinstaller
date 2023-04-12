@@ -173,7 +173,7 @@ static void print_apps(plist_t apps)
 							break;
 						case PLIST_INT:
 							plist_get_uint_val(node, &uval);
-							printf("%llu", uval);
+							printf("%" PRIu64, uval);
 							break;
 						case PLIST_BOOLEAN:
 							printf("%s", plist_bool_val_is_true(node) ? "true" : "false");
