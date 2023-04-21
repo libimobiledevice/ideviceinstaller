@@ -121,7 +121,9 @@ int err_occurred = 0;
 int notified = 0;
 plist_t bundle_ids = NULL;
 plist_t return_attrs = NULL;
-int xml_mode = 0;
+#define FORMAT_XML 1
+#define FORMAT_JSON 2
+int output_format = 0;
 int opt_list_user = 0;
 int opt_list_system = 0;
 char *copy_path = NULL;
@@ -469,7 +471,8 @@ enum numerical_opts {
 	ARCHIVE_DOCS_ONLY,
 	ARCHIVE_COPY_PATH,
 	ARCHIVE_COPY_REMOVE,
-	OUTPUT_XML
+	OUTPUT_XML,
+	OUTPUT_JSON
 };
 
 static void parse_opts(int argc, char **argv)
@@ -487,6 +490,7 @@ static void parse_opts(int argc, char **argv)
 		{ "system", no_argument, NULL, LIST_SYSTEM },
 		{ "all", no_argument, NULL, LIST_ALL },
 		{ "xml", no_argument, NULL, OUTPUT_XML },
+		{ "json", no_argument, NULL, OUTPUT_JSON },
 		{ "uninstall", no_argument, NULL, ARCHIVE_UNINSTALL },
 		{ "app-only", no_argument, NULL, ARCHIVE_APP_ONLY },
 		{ "docs-only", no_argument, NULL, ARCHIVE_DOCS_ONLY },
@@ -559,7 +563,10 @@ static void parse_opts(int argc, char **argv)
 			opt_list_system = 1;
 			break;
 		case OUTPUT_XML:
-			xml_mode = 1;
+			output_format = FORMAT_XML;
+			break;
+		case OUTPUT_JSON:
+			output_format = FORMAT_JSON;
 			break;
 		case ARCHIVE_UNINSTALL:
 			skip_uninstall = 0;
@@ -852,7 +859,7 @@ run_again:
 			plist_dict_set_item(client_opts, "BundleIDs", plist_copy(bundle_ids));
 		}
 
-		if (!xml_mode) {
+		if (!output_format && !return_attrs) {
 			return_attrs = plist_new_array();
 			plist_array_append_item(return_attrs, plist_new_string("CFBundleIdentifier"));
 			plist_array_append_item(return_attrs, plist_new_string("CFBundleShortVersionString"));
@@ -863,20 +870,59 @@ run_again:
 			instproxy_client_options_add(client_opts, "ReturnAttributes", return_attrs, NULL);
 		}
 
-		if (xml_mode) {
+		if (output_format) {
 			err = instproxy_browse(ipc, client_opts, &apps);
 
 			if (!apps || (plist_get_node_type(apps) != PLIST_ARRAY)) {
 				fprintf(stderr, "ERROR: instproxy_browse returnd an invalid plist!\n");
 				goto leave_cleanup;
 			}
-			char *xml = NULL;
+			char *buf = NULL;
 			uint32_t len = 0;
+			if (output_format == FORMAT_XML) {
+				plist_err_t perr = plist_to_xml(apps, &buf, &len);
+				if (perr != PLIST_ERR_SUCCESS) {
+					fprintf(stderr, "ERROR: Failed to convert data to XML format (%d).\n", perr);
+				}
+			} else if (output_format == FORMAT_JSON) {
+				/* for JSON, we need to convert some stuff since it doesn't support PLIST_DATA nodes */
+				plist_array_iter aiter = NULL;
+				plist_array_new_iter(apps, &aiter);
+				plist_t entry = NULL;
+				do {
+					plist_array_next_item(apps, aiter, &entry);
+					if (!entry) break;
+					plist_t items = plist_dict_get_item(entry, "UIApplicationShortcutItems");
+					plist_array_iter inner = NULL;
+					plist_array_new_iter(items, &inner);
+					plist_t item = NULL;
+					do {
+						plist_array_next_item(items, inner, &item);
+						if (!item) break;
+						plist_t userinfo = plist_dict_get_item(item, "UIApplicationShortcutItemUserInfo");
+						if (userinfo) {
+							plist_t data_node = plist_dict_get_item(userinfo, "data");
 
-			plist_to_xml(apps, &xml, &len);
-			if (xml) {
-				puts(xml);
-				free(xml);
+							if (data_node) {
+								char *strbuf = NULL;
+								uint32_t buflen = 0;
+								plist_write_to_string(data_node, &strbuf, &buflen, PLIST_FORMAT_LIMD, PLIST_OPT_NO_NEWLINE);
+								plist_set_string_val(data_node, strbuf);
+								free(strbuf);
+							}
+						}
+					} while (item);
+					free(inner);
+				} while (entry);
+				free(aiter);
+				plist_err_t perr = plist_to_json(apps, &buf, &len, 1);
+				if (perr != PLIST_ERR_SUCCESS) {
+					fprintf(stderr, "ERROR: Failed to convert data to JSON format (%d).\n", perr);
+				}
+			}
+			if (buf) {
+				puts(buf);
+				free(buf);
 			}
 			plist_free(apps);
 			goto leave_cleanup;
@@ -1265,13 +1311,23 @@ run_again:
 			goto leave_cleanup;
 		}
 
-		if (xml_mode) {
-			char *xml = NULL;
+		if (output_format) {
+			char *buf = NULL;
 			uint32_t len = 0;
-			plist_to_xml(dict, &xml, &len);
-			if (xml) {
-				puts(xml);
-				free(xml);
+			if (output_format == FORMAT_XML) {
+				plist_err_t perr = plist_to_xml(dict, &buf, &len);
+				if (perr != PLIST_ERR_SUCCESS) {
+					fprintf(stderr, "ERROR: Failed to convert data to XML format (%d).\n", perr);
+				}
+			} else if (output_format == FORMAT_JSON) {
+				plist_err_t perr = plist_to_json(dict, &buf, &len, 1);
+				if (perr != PLIST_ERR_SUCCESS) {
+					fprintf(stderr, "ERROR: Failed to convert data to JSON format (%d).\n", perr);
+				}
+			}
+			if (buf) {
+				puts(buf);
+				free(buf);
 			}
 			plist_free(dict);
 			goto leave_cleanup;
