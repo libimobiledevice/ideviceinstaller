@@ -3,4 +3,8 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = src man
 
 EXTRA_DIST = \
-	README.md
+	README.md \
+	git-version-gen
+
+dist-hook:
+	echo $(VERSION) > $(distdir)/.tarball-version
