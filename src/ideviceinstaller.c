@@ -322,8 +322,8 @@ static int zip_get_contents(struct zip *zf, const char *filename, int locate_fla
 
 static int zip_get_app_directory(struct zip* zf, char** path)
 {
-	int i = 0;
-	int c = zip_get_num_files(zf);
+	zip_int64_t i = 0;
+	zip_int64_t c = (zip_int64_t)zip_get_num_entries(zf, 0);
 	int len = 0;
 	const char* name = NULL;
 
@@ -1009,8 +1009,8 @@ run_again:
 			printf("Uploading %s package contents... ", basename(ipcc));
 
 			/* extract the contents of the .ipcc file to PublicStaging/<name>.ipcc directory */
-			zip_uint64_t numzf = zip_get_num_entries(zf, 0);
-			zip_uint64_t i = 0;
+			zip_int64_t numzf = (zip_int64_t)zip_get_num_entries(zf, 0);
+			zip_int64_t i = 0;
 			for (i = 0; numzf > 0 && i < numzf; i++) {
 				const char* zname = zip_get_name(zf, i, 0);
 				char* dstpath = NULL;
