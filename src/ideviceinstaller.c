@@ -925,6 +925,7 @@ run_again:
 				free(buf);
 			}
 			plist_free(apps);
+			res = 0;
 			goto leave_cleanup;
 		}
 
