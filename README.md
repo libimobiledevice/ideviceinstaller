@@ -14,10 +14,10 @@ communication with iOS devices.
 
 Some key features are:
 
-- **Status:** Install, upgrade, uninstall, archive, restore and enumerate apps
+- **Status:** Install, upgrade, uninstall, and enumerate apps
 - **Browse**: Allows to retrieve a list of installed apps with filter options
 - **Install**: Supports app package, carrier bundle and developer .app directory
-- **Format**: Allows command output in plist format
+- **Format**: Allows command output in plist, XML, or JSON format
 - **Compatibility**: Supports latest device firmware releases
 - **Cross-Platform:** Tested on Linux, macOS, Windows and Android platforms
 
@@ -60,7 +60,7 @@ First of all attach your device to your machine.
 
 Then simply run:
 ```shell
-ideviceinstaller --list-apps
+ideviceinstaller list
 ```
 
 This will print a list of `<appid>` identifiers (bundle identifiers) for use
@@ -68,12 +68,12 @@ with other commands (see further below).
 
 To install an app from a package file use:
 ```shell
-ideviceinstaller --install <file>
+ideviceinstaller install <file>
 ```
 
 To uninstall an app with the `<appid>` from the device use:
 ```shell
-ideviceinstaller --uninstall <appid>
+ideviceinstaller uninstall <appid>
 ```
 
 Please consult the usage information or manual page for a full documentation of
@@ -124,4 +124,4 @@ iPadOS, tvOS, watchOS, and macOS are trademarks of Apple Inc.
 ideviceinstaller is an independent software application and has not been
 authorized, sponsored or otherwise approved by Apple Inc.
 
-README Updated on: 2022-04-04
+README Updated on: 2023-07-20
