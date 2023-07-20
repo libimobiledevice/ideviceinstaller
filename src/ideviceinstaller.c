@@ -792,7 +792,7 @@ static char *buf_from_file(const char *filename, size_t *size)
 	}
 	size_t amount = fread(ibuf, 1, filesize, fp);
 	if (amount != filesize) {
-		fprintf(stderr, "ERROR: could not read %ld bytes from %s\n", filesize, filename);
+		fprintf(stderr, "ERROR: could not read %" PRIu64 " bytes from %s\n", (uint64_t)filesize, filename);
 		free(ibuf);
 		return NULL;
 	}
