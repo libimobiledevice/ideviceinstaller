@@ -1181,11 +1181,7 @@ run_again:
 			free(filename);
 
 			plist_t info = NULL;
-			if (memcmp(ibuf, "bplist00", 8) == 0) {
-				plist_from_bin(ibuf, filesize, &info);
-			} else {
-				plist_from_xml(ibuf, filesize, &info);
-			}
+			plist_from_memory(ibuf, filesize, &info, NULL);
 			free(ibuf);
 
 			if (!info) {
@@ -1215,13 +1211,12 @@ run_again:
 				zbuf = buf_from_file(extmeta, &flen);
 				if (zbuf && flen) {
 					meta = plist_new_data(zbuf, flen);
-					if (memcmp(zbuf, "bplist00", 8) == 0) {
-						plist_from_bin(zbuf, flen, &meta_dict);
-					} else {
-						plist_from_xml(zbuf, flen, &meta_dict);
-					}
+					plist_from_memory(zbuf, flen, &meta_dict, NULL);
 					free(zbuf);
-				} else {
+				}
+				if (!meta_dict) {
+					plist_free(meta);
+					meta = NULL;
 					fprintf(stderr, "WARNING: could not load external iTunesMetadata %s!\n", extmeta);
 				}
 				zbuf = NULL;
@@ -1231,12 +1226,11 @@ run_again:
 				/* extract iTunesMetadata.plist from package */
 				if (zip_get_contents(zf, ITUNES_METADATA_PLIST_FILENAME, 0, &zbuf, &len) == 0) {
 					meta = plist_new_data(zbuf, len);
-					if (memcmp(zbuf, "bplist00", 8) == 0) {
-						plist_from_bin(zbuf, len, &meta_dict);
-					} else {
-						plist_from_xml(zbuf, len, &meta_dict);
-					}
-				} else {
+					plist_from_memory(zbuf, len, &meta_dict, NULL);
+				}
+				if (!meta_dict) {
+					plist_free(meta);
+					meta = NULL;
 					fprintf(stderr, "WARNING: could not locate %s in archive!\n", ITUNES_METADATA_PLIST_FILENAME);
 				}
 				free(zbuf);
@@ -1269,11 +1263,7 @@ run_again:
 				goto leave_cleanup;
 			}
 			free(filename);
-			if (memcmp(zbuf, "bplist00", 8) == 0) {
-				plist_from_bin(zbuf, len, &info);
-			} else {
-				plist_from_xml(zbuf, len, &info);
-			}
+			plist_from_memory(zbuf, len, &info, NULL);
 			free(zbuf);
 
 			if (!info) {
