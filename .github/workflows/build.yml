@@ -50,7 +50,7 @@ jobs:
           rm -rf extract/lib
           sudo cp -r extract/* /
           sudo ldconfig
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: autogen
@@ -65,7 +65,7 @@ jobs:
           DESTDIR=`pwd`/dest make install
           tar -C dest -cf ideviceinstaller.tar usr
     - name: publish artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ideviceinstaller-latest_${{env.target_triplet}}
         path: ideviceinstaller.tar
@@ -115,7 +115,7 @@ jobs:
             tar -C extract -xvf $I
           done
           sudo cp -r extract/* /
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: install additional requirements
       run: |
           SDKDIR=`xcrun --sdk macosx --show-sdk-path 2>/dev/null`
@@ -166,7 +166,7 @@ jobs:
           DESTDIR=`pwd`/dest make install
           tar -C dest -cf ideviceinstaller.tar usr
     - name: publish artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ideviceinstaller-latest_macOS
         path: ideviceinstaller.tar
@@ -237,7 +237,7 @@ jobs:
             tar -C extract -xvf $I
           done
           cp -r extract/* /
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: install additional requirements
       run: |
           FILENAME="libzip-1.7.1-static.tar.bz2"
@@ -259,7 +259,7 @@ jobs:
           DESTDIR=`pwd`/dest make install
           tar -C dest -cf ideviceinstaller.tar ${{ env.dest }}
     - name: publish artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ideviceinstaller-latest_${{ matrix.arch }}-${{ env.dest }}
         path: ideviceinstaller.tar
