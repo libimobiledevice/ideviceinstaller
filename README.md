@@ -25,6 +25,14 @@ Some key features are:
 
 ### Debian / Ubuntu Linux
 
+#### Installing ideviceinstaller via package manager
+
+```shell
+sudo apt install ideviceinstaller
+```
+
+#### Compiling ideviceinstaller from source
+
 First install all required dependencies and build tools:
 ```shell
 sudo apt-get install \
