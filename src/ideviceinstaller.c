@@ -1216,7 +1216,7 @@ run_again:
 				size_t flen = 0;
 				zbuf = buf_from_file(extmeta, &flen);
 				if (zbuf && flen) {
-					meta = plist_new_data((uint8_t*)zbuf, flen);
+					meta = plist_new_data(zbuf, flen);
 					plist_from_memory(zbuf, flen, &meta_dict, NULL);
 					free(zbuf);
 				}
@@ -1231,7 +1231,7 @@ run_again:
 			if (!meta && !meta_dict) {
 				/* extract iTunesMetadata.plist from package */
 				if (zip_get_contents(zf, ITUNES_METADATA_PLIST_FILENAME, 0, &zbuf, &len) == 0) {
-					meta = plist_new_data((uint8_t*)zbuf, len);
+					meta = plist_new_data(zbuf, len);
 					plist_from_memory(zbuf, len, &meta_dict, NULL);
 				}
 				if (!meta_dict) {
@@ -1304,7 +1304,7 @@ run_again:
 				size_t flen = 0;
 				zbuf = buf_from_file(extsinf, &flen);
 				if (zbuf && flen) {
-					sinf = plist_new_data((uint8_t*)zbuf, flen);
+					sinf = plist_new_data(zbuf, flen);
 					free(zbuf);
 				} else {
 					fprintf(stderr, "WARNING: could not load external SINF %s!\n", extsinf);
@@ -1324,7 +1324,7 @@ run_again:
 				zbuf = NULL;
 				len = 0;
 				if (zip_get_contents(zf, sinfname, 0, &zbuf, &len) == 0) {
-					sinf = plist_new_data((uint8_t*)zbuf, len);
+					sinf = plist_new_data(zbuf, len);
 				} else {
 					fprintf(stderr, "WARNING: could not locate %s in archive!\n", sinfname);
 				}
