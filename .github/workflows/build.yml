@@ -174,7 +174,7 @@ jobs:
         name: ideviceinstaller-latest_macOS
         path: ideviceinstaller.tar
   build-windows:
-    runs-on: windows-2019
+    runs-on: windows-latest
     defaults:
       run:
         shell: msys2 {0}
@@ -195,6 +195,8 @@ jobs:
           base-devel
           git
           mingw-w64-${{ matrix.arch }}-gcc
+          mingw-w64-${{ matrix.arch }}-pkg-config
+          mingw-w64-${{ matrix.arch }}-openssl
           make
           libtool
           autoconf
@@ -251,7 +253,7 @@ jobs:
           echo "LIBZIP_CFLAGS=-I`pwd`/deps/include" >> $GITHUB_ENV
           echo "LIBZIP_LIBS=`pwd`/deps/lib/libzip.a /${{env.dest}}/lib/libbz2.a /${{env.dest}}/lib/liblzma.a " >> $GITHUB_ENV
     - name: autogen
-      run: ./autogen.sh CC=gcc CXX=g++ libzip_CFLAGS="${{env.LIBZIP_CFLAGS}}" libzip_LIBS="${{env.LIBZIP_LIBS}} /${{env.dest}}/lib/libz.a"
+      run: ./autogen.sh PKG_CONFIG_PATH=/${{env.dest}}/lib/pkgconfig libzip_CFLAGS="${{env.LIBZIP_CFLAGS}}" libzip_LIBS="${{env.LIBZIP_LIBS}} /${{env.dest}}/lib/libz.a"
     - name: make
       run: make
     - name: make install
