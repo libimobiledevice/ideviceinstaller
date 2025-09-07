@@ -197,6 +197,8 @@ jobs:
           mingw-w64-${{ matrix.arch }}-gcc
           mingw-w64-${{ matrix.arch }}-pkg-config
           mingw-w64-${{ matrix.arch }}-openssl
+          mingw-w64-${{ matrix.arch }}-xz
+          mingw-w64-${{ matrix.arch }}-bzip2
           make
           libtool
           autoconf
