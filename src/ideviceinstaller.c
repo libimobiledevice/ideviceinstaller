@@ -170,27 +170,7 @@ static void print_apps(plist_t apps)
 				if (!strcmp(key, "CFBundleIdentifier")) {
 					printf("%s", plist_get_string_ptr(node, NULL));
 				} else {
-					uint64_t uval = 0;
-					switch (plist_get_node_type(node)) {
-						case PLIST_STRING:
-							printf("\"%s\"", plist_get_string_ptr(node, NULL));
-							break;
-						case PLIST_INT:
-							plist_get_uint_val(node, &uval);
-							printf("%" PRIu64, uval);
-							break;
-						case PLIST_BOOLEAN:
-							printf("%s", plist_bool_val_is_true(node) ? "true" : "false");
-							break;
-						case PLIST_ARRAY:
-							printf("(array)");
-							break;
-						case PLIST_DICT:
-							printf("(dict)");
-							break;
-						default:
-							break;
-					}
+					plist_write_to_stream(node, stdout, PLIST_FORMAT_PRINT, PLIST_OPT_NO_NEWLINE);
 				}
 			}
 		}
